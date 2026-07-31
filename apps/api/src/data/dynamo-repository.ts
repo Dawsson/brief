@@ -6,6 +6,7 @@ import {
   PutCommand,
   ScanCommand,
   UpdateCommand,
+  type NativeAttributeValue,
 } from "@aws-sdk/lib-dynamodb";
 import type { BriefDocument } from "@brief/core";
 import type {
@@ -22,6 +23,7 @@ import type { Repository } from "./repository";
 interface EntityItem {
   data: unknown;
   entity: string;
+  expiresAt?: number;
   pk: string;
   sk: string;
 }
@@ -31,10 +33,11 @@ export class DynamoRepository implements Repository {
   constructor(private readonly tableName: string) {}
 
   private async put(entity: string, pk: string, sk: string, data: unknown): Promise<void> {
+    const expiresAt = expirationTimestamp(data);
     await this.client.send(
       new PutCommand({
         TableName: this.tableName,
-        Item: { entity, pk, sk, data } satisfies EntityItem,
+        Item: { entity, pk, sk, data, ...(expiresAt ? { expiresAt } : {}) } satisfies EntityItem,
       }),
     );
   }
@@ -47,16 +50,23 @@ export class DynamoRepository implements Repository {
   }
 
   private async scan<T>(entity: string): Promise<T[]> {
-    const response = await this.client.send(
-      new ScanCommand({
-        TableName: this.tableName,
-        FilterExpression: "entity = :entity",
-        ExpressionAttributeValues: { ":entity": entity },
-        ProjectionExpression: "#data",
-        ExpressionAttributeNames: { "#data": "data" },
-      }),
-    );
-    return (response.Items ?? []).map((item) => item.data as T);
+    const items: T[] = [];
+    let exclusiveStartKey: Record<string, NativeAttributeValue> | undefined;
+    do {
+      const response = await this.client.send(
+        new ScanCommand({
+          TableName: this.tableName,
+          FilterExpression: "entity = :entity",
+          ExpressionAttributeValues: { ":entity": entity },
+          ProjectionExpression: "#data",
+          ExpressionAttributeNames: { "#data": "data" },
+          ...(exclusiveStartKey ? { ExclusiveStartKey: exclusiveStartKey } : {}),
+        }),
+      );
+      items.push(...(response.Items ?? []).map((item) => item.data as T));
+      exclusiveStartKey = response.LastEvaluatedKey;
+    } while (exclusiveStartKey);
+    return items;
   }
 
   async consumeDeviceAuthorization(hash: string, consumedAt: string) {
@@ -90,6 +100,14 @@ export class DynamoRepository implements Repository {
   async createInvite(invite: InviteRecord) {
     await this.put("invite", `INVITE#${invite.id}`, "META", invite);
   }
+  async deleteApiToken(hash: string) {
+    await this.client.send(
+      new DeleteCommand({
+        TableName: this.tableName,
+        Key: { pk: `API_TOKEN#${hash}`, sk: "META" },
+      }),
+    );
+  }
   async deleteBrief(id: string) {
     await this.client.send(
       new DeleteCommand({ TableName: this.tableName, Key: { pk: `BRIEF#${id}`, sk: "META" } }),
@@ -100,8 +118,10 @@ export class DynamoRepository implements Repository {
       new DeleteCommand({ TableName: this.tableName, Key: { pk: `FLOW#${id}`, sk: "META" } }),
     );
   }
-  async findUserByApiTokenHash(hash: string) {
-    return (await this.listUsers()).find((user) => user.apiTokenHash === hash);
+  async deleteSession(hash: string) {
+    await this.client.send(
+      new DeleteCommand({ TableName: this.tableName, Key: { pk: `SESSION#${hash}`, sk: "META" } }),
+    );
   }
   async findDeviceAuthorizationByUserCode(code: string) {
     return (await this.scan<DeviceAuthorizationRecord>("device_authorization")).find(
@@ -185,4 +205,12 @@ export class DynamoRepository implements Repository {
     const invite = (await this.listInvites()).find((candidate) => candidate.id === id);
     if (invite) await this.put("invite", `INVITE#${id}`, "META", { ...invite, acceptedAt });
   }
+}
+
+function expirationTimestamp(data: unknown): number | undefined {
+  if (!data || typeof data !== "object" || !("expiresAt" in data)) return undefined;
+  const expiresAt = (data as { expiresAt?: unknown }).expiresAt;
+  if (typeof expiresAt !== "string") return undefined;
+  const milliseconds = Date.parse(expiresAt);
+  return Number.isFinite(milliseconds) ? Math.floor(milliseconds / 1000) : undefined;
 }

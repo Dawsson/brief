@@ -24,6 +24,7 @@ export default $config({
     const table = new sst.aws.Dynamo("Database", {
       fields: { pk: "string", sk: "string" },
       primaryIndex: { hashKey: "pk", rangeKey: "sk" },
+      ttl: "expiresAt",
     });
     const bucket = new sst.aws.Bucket("Storage");
     const api = new pier.PierBackend("Api", {

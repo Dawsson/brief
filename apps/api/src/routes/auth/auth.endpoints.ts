@@ -6,6 +6,7 @@ import type { UserRecord } from "../../data/model";
 import type { BriefServices } from "../../runtime/services";
 import { emptyInputSchema, publicUser, userSchema } from "../../schemas";
 import { requireUser } from "./auth.middleware";
+import { SESSION_COOKIE } from "./sessions.service";
 
 const registerInput = z.object({ email: z.email(), inviteToken: z.string().nullable().optional() });
 const flowInput = z.object({ flowId: z.string().min(1), response: z.unknown() });
@@ -24,7 +25,7 @@ export const registrationOptions = procedure
   .openapi({ summary: "Begin passkey registration", tags: ["Authentication"] })
   .handler(async ({ ctx, input }) => {
     try {
-      return await ctx.services.auth.registrationOptions(input);
+      return await ctx.services.auth.passkeys.registrationOptions(input);
     } catch (cause) {
       authenticationError(cause);
     }
@@ -37,19 +38,19 @@ export const registrationVerify = procedure
   .openapi({ summary: "Complete passkey registration", tags: ["Authentication"] })
   .handler(async ({ ctx, input, res }) => {
     try {
-      const result = await ctx.services.auth.verifyRegistration(
+      const user = await ctx.services.auth.passkeys.verifyRegistration(
         input.flowId,
         input.response as RegistrationResponseJSON,
       );
-      const token = await ctx.services.auth.createSession(result.user);
-      res.cookie("brief_session", token, {
+      const token = await ctx.services.auth.sessions.create(user);
+      res.cookie(SESSION_COOKIE, token, {
         httpOnly: true,
         maxAge: "30d",
         path: "/",
         sameSite: "lax",
         secure: secureCookie(ctx.services.authOrigin),
       });
-      return res.created({ data: publicUser(result.user) });
+      return res.created({ data: publicUser(user) });
     } catch (cause) {
       authenticationError(cause);
     }
@@ -62,7 +63,7 @@ export const authenticationOptions = procedure
   .openapi({ summary: "Begin passkey authentication", tags: ["Authentication"] })
   .handler(async ({ ctx, input }) => {
     try {
-      return await ctx.services.auth.authenticationOptions(input.email);
+      return await ctx.services.auth.passkeys.authenticationOptions(input.email);
     } catch (cause) {
       authenticationError(cause);
     }
@@ -75,12 +76,12 @@ export const authenticationVerify = procedure
   .openapi({ summary: "Complete passkey authentication", tags: ["Authentication"] })
   .handler(async ({ ctx, input, res }) => {
     try {
-      const user = await ctx.services.auth.verifyAuthentication(
+      const user = await ctx.services.auth.passkeys.verifyAuthentication(
         input.flowId,
         input.response as AuthenticationResponseJSON,
       );
-      const token = await ctx.services.auth.createSession(user);
-      res.cookie("brief_session", token, {
+      const token = await ctx.services.auth.sessions.create(user);
+      res.cookie(SESSION_COOKIE, token, {
         httpOnly: true,
         maxAge: "30d",
         path: "/",
@@ -101,6 +102,20 @@ export const session = procedure
   .openapi({ summary: "Read the current session", tags: ["Authentication"] })
   .handler(({ ctx }) => ({ data: publicUser(ctx.user) }));
 
+export const logout = procedure
+  .DELETE("/v1/auth/session")
+  .output({ 204: null })
+  .openapi({ summary: "Revoke the current session or API token", tags: ["Authentication"] })
+  .handler(async ({ ctx, req, res }) => {
+    await ctx.services.auth.principals.revoke(req.raw);
+    res.clearCookie(SESSION_COOKIE, {
+      path: "/",
+      sameSite: "lax",
+      secure: secureCookie(ctx.services.authOrigin),
+    });
+    return res.noContent();
+  });
+
 export const deviceCode = procedure
   .POST("/v1/auth/device/code")
   .output({
@@ -115,9 +130,7 @@ export const deviceCode = procedure
     }),
   })
   .openapi({ summary: "Create a device authorization", tags: ["Authentication"] })
-  .handler(async ({ ctx, res }) =>
-    res.created({ data: await ctx.services.auth.createDeviceAuthorization() }),
-  );
+  .handler(async ({ ctx, res }) => res.created({ data: await ctx.services.auth.devices.create() }));
 
 export const deviceToken = procedure
   .POST("/v1/auth/device/token")
@@ -130,7 +143,7 @@ export const deviceToken = procedure
   })
   .openapi({ summary: "Exchange a device code", tags: ["Authentication"] })
   .handler(async ({ ctx, input, res }) => {
-    const result = await ctx.services.auth.exchangeDeviceCode(input.deviceCode);
+    const result = await ctx.services.auth.devices.exchange(input.deviceCode);
     if (result.status === "pending") {
       return res.accepted({ data: { interval: result.intervalSeconds, status: result.status } });
     }
@@ -163,7 +176,7 @@ export const deviceAuthorization = procedure
   })
   .openapi({ summary: "Read a device authorization", tags: ["Authentication"] })
   .handler(async ({ ctx, input }) => {
-    const authorization = await ctx.services.auth.getDeviceAuthorization(input.userCode);
+    const authorization = await ctx.services.auth.devices.get(input.userCode);
     if (!authorization) throw apiErrors.NOT_FOUND({ detail: "Device code not found" });
     if (authorization.expiresAt <= new Date().toISOString()) {
       throw apiErrors.DEVICE_CODE_EXPIRED({ detail: "This device code has expired" });
@@ -198,11 +211,7 @@ async function decideDevice(
   userCode: string,
   decision: "approve" | "deny",
 ) {
-  const authorization = await ctx.services.auth.decideDeviceAuthorization(
-    userCode,
-    ctx.user,
-    decision,
-  );
+  const authorization = await ctx.services.auth.devices.decide(userCode, ctx.user, decision);
   if (!authorization) throw apiErrors.NOT_FOUND({ detail: "Device code not found" });
   if (authorization.expiresAt <= new Date().toISOString()) {
     throw apiErrors.DEVICE_CODE_EXPIRED({ detail: "This device code has expired" });

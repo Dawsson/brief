@@ -70,8 +70,19 @@ export class S3StorageService implements StorageService {
   private readonly client = new S3Client({});
   constructor(private readonly bucket: string) {}
   async bytesUsed() {
-    const response = await this.client.send(new ListObjectsV2Command({ Bucket: this.bucket }));
-    return (response.Contents ?? []).reduce((total, item) => total + (item.Size ?? 0), 0);
+    let bytes = 0;
+    let continuationToken: string | undefined;
+    do {
+      const response = await this.client.send(
+        new ListObjectsV2Command({
+          Bucket: this.bucket,
+          ...(continuationToken ? { ContinuationToken: continuationToken } : {}),
+        }),
+      );
+      bytes += (response.Contents ?? []).reduce((total, item) => total + (item.Size ?? 0), 0);
+      continuationToken = response.NextContinuationToken;
+    } while (continuationToken);
+    return bytes;
   }
   async createUpload(input: UploadRequest) {
     const key = `${input.ownerId}/${crypto.randomUUID()}/${safeFilename(input.filename)}`;

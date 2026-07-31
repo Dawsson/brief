@@ -5,7 +5,12 @@ import type envSchema from "../../env";
 import { DynamoRepository } from "../data/dynamo-repository";
 import { MemoryRepository, type Repository } from "../data/repository";
 import { LocalStorageService, S3StorageService, type StorageService } from "../data/storage";
-import { AuthService } from "../routes/auth/auth.service";
+import { ApiKeyService } from "../routes/auth/api-keys.service";
+import type { AuthConfiguration } from "../routes/auth/auth.types";
+import { DeviceAuthorizationService } from "../routes/auth/device-authorization.service";
+import { PasskeyService } from "../routes/auth/passkeys.service";
+import { PrincipalService } from "../routes/auth/principal.service";
+import { SessionService } from "../routes/auth/sessions.service";
 
 export interface CreateTestServicesOptions {
   adminEmail?: string;
@@ -16,7 +21,12 @@ export interface CreateTestServicesOptions {
 }
 
 export interface BriefServices {
-  readonly auth: AuthService;
+  readonly auth: {
+    readonly devices: DeviceAuthorizationService;
+    readonly passkeys: PasskeyService;
+    readonly principals: PrincipalService;
+    readonly sessions: SessionService;
+  };
   readonly authOrigin: string;
   readonly repository: Repository;
   readonly storage: StorageService;
@@ -52,13 +62,21 @@ function createServices(input: {
   readonly rpId: string;
   readonly storage: StorageService;
 }): BriefServices {
+  const authConfiguration: AuthConfiguration = {
+    adminEmail: input.adminEmail,
+    origin: input.appOrigin,
+    rpId: input.rpId,
+    rpName: "Brief",
+  };
+  const apiKeys = new ApiKeyService(input.repository);
+  const sessions = new SessionService(input.repository);
   return {
-    auth: new AuthService(input.repository, {
-      adminEmail: input.adminEmail,
-      origin: input.appOrigin,
-      rpId: input.rpId,
-      rpName: "Brief",
-    }),
+    auth: {
+      devices: new DeviceAuthorizationService(input.repository, apiKeys, input.appOrigin),
+      passkeys: new PasskeyService(input.repository, authConfiguration),
+      principals: new PrincipalService(apiKeys, sessions),
+      sessions,
+    },
     authOrigin: input.appOrigin,
     repository: input.repository,
     storage: input.storage,

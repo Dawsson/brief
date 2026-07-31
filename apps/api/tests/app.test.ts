@@ -56,15 +56,19 @@ describe("browser API access", () => {
 describe("CLI device authorization", () => {
   test("delivers an agent token only after signed-in approval", async () => {
     const repository = new MemoryRepository();
-    const legacyToken = "brief_live_existing";
+    const existingToken = "brief_live_existing";
     const user = {
       id: "usr_admin",
       email: "hello@dawson.gg",
       role: "admin" as const,
       createdAt: new Date().toISOString(),
-      apiTokenHash: await hashToken(legacyToken),
     };
     await repository.putUser(user);
+    await repository.putApiToken({
+      createdAt: new Date().toISOString(),
+      idHash: await hashToken(existingToken),
+      userId: user.id,
+    });
     const app = createTestApp({ repository });
 
     const started = await app.request("/v1/auth/device/code", { method: "POST" });
@@ -88,7 +92,7 @@ describe("CLI device authorization", () => {
       `/v1/auth/device/${encodeURIComponent(authorization.data.userCode)}/approve`,
       {
         method: "POST",
-        headers: { authorization: `Bearer ${legacyToken}` },
+        headers: { authorization: `Bearer ${existingToken}` },
       },
     );
     expect(approved.status).toBe(200);
@@ -114,5 +118,16 @@ describe("CLI device authorization", () => {
       body: JSON.stringify({ deviceCode: authorization.data.deviceCode }),
     });
     expect(replay.status).toBe(409);
+
+    const logout = await app.request("/v1/auth/session", {
+      method: "DELETE",
+      headers: { authorization: `Bearer ${credentials.data.token}` },
+    });
+    expect(logout.status).toBe(204);
+
+    const revoked = await app.request("/v1/briefs", {
+      headers: { authorization: `Bearer ${credentials.data.token}` },
+    });
+    expect(revoked.status).toBe(401);
   });
 });

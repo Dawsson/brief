@@ -124,6 +124,16 @@ async function login(apiUrlInput: string | undefined, noOpen: boolean): Promise<
 }
 
 async function logout(): Promise<void> {
+  const credentials = await readStoredCredentials();
+  if (!credentials) {
+    console.log("Brief is already signed out.");
+    return;
+  }
+  const response = await request("/v1/auth/session", credentials.apiUrl, {
+    method: "DELETE",
+    headers: { authorization: `Bearer ${credentials.token}` },
+  });
+  if (!response.ok) throw await responseError(response);
   const removed = await clearStoredCredentials();
   console.log(removed ? "Signed out of Brief." : "Brief is already signed out.");
 }
@@ -153,7 +163,7 @@ Usage:
 Commands:
   login    Authorize this machine in your browser and save credentials
   whoami   Show the currently connected Brief account
-  logout   Remove saved credentials from this machine
+  logout   Revoke and remove this machine's credentials
 
 Options:
   --api-url <url>  Brief API origin (default: ${DEFAULT_API_URL})

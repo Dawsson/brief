@@ -3,8 +3,6 @@ import type { AuthenticatorTransportFuture, Base64URLString } from "@simplewebau
 export type UserRole = "admin" | "user";
 
 export interface UserRecord {
-  /** @deprecated Legacy single-token storage. New tokens use ApiTokenRecord. */
-  apiTokenHash?: string;
   createdAt: string;
   email: string;
   id: string;

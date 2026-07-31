@@ -16,9 +16,10 @@ export interface Repository {
   ): Promise<DeviceAuthorizationRecord | undefined>;
   countUsers(): Promise<number>;
   createInvite(invite: InviteRecord): Promise<void>;
+  deleteApiToken(hash: string): Promise<void>;
   deleteBrief(id: string): Promise<void>;
   deleteFlow(id: string): Promise<void>;
-  findUserByApiTokenHash(hash: string): Promise<UserRecord | undefined>;
+  deleteSession(hash: string): Promise<void>;
   findDeviceAuthorizationByUserCode(code: string): Promise<DeviceAuthorizationRecord | undefined>;
   findUserByEmail(email: string): Promise<UserRecord | undefined>;
   getBrief(id: string): Promise<BriefDocument | undefined>;
@@ -73,14 +74,17 @@ export class MemoryRepository implements Repository {
   async createInvite(invite: InviteRecord) {
     this.invites.set(invite.id, structuredClone(invite));
   }
+  async deleteApiToken(hash: string) {
+    this.apiTokens.delete(hash);
+  }
   async deleteBrief(id: string) {
     this.briefs.delete(id);
   }
   async deleteFlow(id: string) {
     this.flows.delete(id);
   }
-  async findUserByApiTokenHash(hash: string) {
-    return [...this.users.values()].find((user) => user.apiTokenHash === hash);
+  async deleteSession(hash: string) {
+    this.sessions.delete(hash);
   }
   async findDeviceAuthorizationByUserCode(code: string) {
     return structuredClone(

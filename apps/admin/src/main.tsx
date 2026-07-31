@@ -13,6 +13,7 @@ import {
   FileText,
   HardDrive,
   KeyRound,
+  LogOut,
   Plus,
   ShieldCheck,
   Terminal,
@@ -273,7 +274,7 @@ function DeviceApproval({ code, user }: { code: string; user: UserSummary }) {
   );
 }
 
-function AccountHome({ user }: { user: UserSummary }) {
+function AccountHome({ onSignOut, user }: { onSignOut: () => void; user: UserSummary }) {
   return (
     <main className="grid min-h-screen place-items-center bg-neutral-50 px-5">
       <section className="page-enter w-full max-w-[460px] rounded-[22px] border border-neutral-200 bg-white p-8 shadow-[0_24px_80px_rgba(0,0,0,.07)] sm:p-10">
@@ -288,6 +289,9 @@ function AccountHome({ user }: { user: UserSummary }) {
         <code className="mt-7 flex items-center gap-3 rounded-xl bg-neutral-950 p-5 font-mono text-xs text-neutral-200">
           <Terminal size={15} className="shrink-0 text-neutral-500" /> bunx @dawsson/brief login
         </code>
+        <Button className="mt-4 w-full" variant="secondary" onClick={onSignOut}>
+          <LogOut size={15} /> Sign out
+        </Button>
       </section>
     </main>
   );
@@ -305,7 +309,15 @@ function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; va
   );
 }
 
-function Dashboard({ data, refresh }: { data: Overview; refresh: () => void }) {
+function Dashboard({
+  data,
+  onSignOut,
+  refresh,
+}: {
+  data: Overview;
+  onSignOut: () => void;
+  refresh: () => void;
+}) {
   const [email, setEmail] = useState("");
   const [inviteUrl, setInviteUrl] = useState<string>();
   async function invite(event: FormEvent) {
@@ -323,7 +335,13 @@ function Dashboard({ data, refresh }: { data: Overview; refresh: () => void }) {
     <div className="min-h-screen bg-white">
       <header className="mx-auto flex h-20 w-[min(1120px,calc(100%-40px))] items-center justify-between border-b border-neutral-100">
         <Logo />
-        <span className="text-xs text-neutral-400">Admin</span>
+        <button
+          className="flex items-center gap-2 text-xs text-neutral-400 hover:text-neutral-700"
+          onClick={onSignOut}
+          type="button"
+        >
+          <LogOut size={13} /> Sign out
+        </button>
       </header>
       <main className="mx-auto w-[min(1120px,calc(100%-40px))] py-14">
         <div className="page-enter flex items-end justify-between gap-6">
@@ -401,6 +419,12 @@ function App() {
   const [data, setData] = useState<Overview>();
   const [user, setUser] = useState<UserSummary>();
   const [unauthorized, setUnauthorized] = useState(false);
+  async function signOut() {
+    await api("/v1/auth/session", { method: "DELETE" });
+    setData(undefined);
+    setUser(undefined);
+    setUnauthorized(true);
+  }
   async function refresh() {
     try {
       const session = await api<{ data: UserSummary }>("/v1/auth/session");
@@ -424,9 +448,9 @@ function App() {
       </main>
     );
   if (deviceCode) return <DeviceApproval code={deviceCode} user={user} />;
-  if (user.role !== "admin") return <AccountHome user={user} />;
+  if (user.role !== "admin") return <AccountHome onSignOut={signOut} user={user} />;
   if (!data) return null;
-  return <Dashboard data={data} refresh={refresh} />;
+  return <Dashboard data={data} onSignOut={signOut} refresh={refresh} />;
 }
 
 const root = document.querySelector<HTMLDivElement>("#root");

@@ -10,7 +10,7 @@ export const userSchema = z.object({
   email: z.email(),
   id: z.string(),
   role: z.enum(["admin", "user"]),
-}) satisfies z.ZodType<Omit<UserRecord, "apiTokenHash">>;
+}) satisfies z.ZodType<UserRecord>;
 
 export const inviteSchema = z.object({
   acceptedAt: z.string().optional(),
@@ -38,9 +38,8 @@ export const briefDocumentSchema = z
   })
   .passthrough() as unknown as z.ZodType<BriefDocument>;
 
-export function publicUser(user: UserRecord): Omit<UserRecord, "apiTokenHash"> {
-  const { apiTokenHash: _, ...summary } = user;
-  return summary;
+export function publicUser(user: UserRecord): UserRecord {
+  return user;
 }
 
 export function publicInvite(invite: InviteRecord): Omit<InviteRecord, "tokenHash"> {
