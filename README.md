@@ -1,8 +1,10 @@
 # Brief
 
-Beautiful, structured reports for AI agents.
+Brief is a TypeScript SDK for publishing structured reports that are pleasant to read and easy for agents to update.
 
-Brief gives an agent one ergonomic TypeScript SDK for creating and continuously updating a report. People read the result in a quiet, responsive browser view. Other agents consume the exact same URL as Markdown, plain text, or canonical JSON.
+```sh
+bun add @dawsson/brief
+```
 
 ```ts
 import { Brief } from "@dawsson/brief";
@@ -12,16 +14,15 @@ const brief = await Brief.create({
   visibility: "public",
 });
 
-brief.summary(`
-Deployment completed successfully.
-`);
+brief.summary("Deployment completed successfully.");
 brief.todo(["Warm cache", "Verify production"]);
 brief.logs(stdout);
 
 await brief.publish();
+console.log(brief.url);
 ```
 
-Later, update stable blocks instead of rebuilding a document:
+Open the same Brief later and change only what changed:
 
 ```ts
 const brief = await Brief.open(id);
@@ -33,9 +34,17 @@ brief.logs.append(newLogs);
 await brief.commit();
 ```
 
-## One URL, every format
+The SDK produces typed operations. Operations update canonical document state, and one renderer turns that state into every supported format.
 
-Brief uses HTTP content negotiation—never format query parameters.
+```text
+SDK → operations → state → renderer
+```
+
+No renderer structures leak into the SDK. Every Brief, page, section, block, and checklist item keeps a stable ID.
+
+## One URL, four representations
+
+Brief selects a representation from the HTTP `Accept` header. There are no format query parameters and no parallel documents to keep in sync.
 
 ```sh
 curl https://api.example.com/b/brf_123 -H 'Accept: text/html'
@@ -44,47 +53,39 @@ curl https://api.example.com/b/brf_123 -H 'Accept: text/plain'
 curl https://api.example.com/b/brf_123 -H 'Accept: application/vnd.harbr.brief+json'
 ```
 
-The renderer traverses one internal document AST for every output. The SDK never edits renderer structures directly:
+Responses include `Vary: Accept` and an ETag. Unsupported representations receive `406 Not Acceptable`.
 
-```text
-SDK → operations → document state → renderer
-```
+## Scope
 
-## What is included
+Brief v1 deliberately has a small surface:
 
-- `@dawsson/brief`: public TypeScript SDK
-- Public, private, and expiring secret-link Briefs
-- Pages, sections, and eleven intentionally small block types
-- Atomic `replace`, `append`, `remove`, `move`, `check`, `uncheck`, and `set` operations
-- Correct `Accept` negotiation with `Vary`, ETags, and `406` responses
-- Passkey-only, invite-only accounts with admin and user roles
-- Revocable bearer tokens for agent SDK access
-- DynamoDB persistence and private S3 asset storage
-- A minimal users, invites, Briefs, and storage admin
-- SST infrastructure using Pier's native Lambda component
-- A dependency-free native `brief-inspect` tool compiled with ScriptC
+- Pages containing sections containing blocks
+- Hero, Markdown, checklist, code, logs, table, callout, image, metric, divider, and spacer blocks
+- `replace`, `append`, `remove`, `move`, `check`, `uncheck`, and `set` operations
+- Public, private, and expiring secret-link sharing
+- Invite-only, passkey-only accounts with admin and user roles
+- Agent tokens for SDK access
+- A focused admin for users, invites, Briefs, and storage
+
+The production stack is Hono on AWS Lambda, DynamoDB, private S3 storage, and SST with Pier. The browser apps use React, Tailwind CSS, and shadcn-style primitives. Everything is TypeScript except the dependency-free ScriptC inspector.
 
 ## Development
 
-Requirements: Bun 1.3+, Vite Plus, and a browser with WebAuthn support.
+You need [Bun](https://bun.sh) 1.3 or newer and [Vite Plus](https://viteplus.dev).
 
 ```sh
 vp install
 bun dev
 ```
 
-Local services:
-
-| Service | URL                     |
+| Service | Local URL               |
 | ------- | ----------------------- |
 | Web     | `http://localhost:5173` |
 | Admin   | `http://localhost:5174` |
 | Docs    | `http://localhost:5175` |
 | API     | `http://localhost:4000` |
 
-Local development uses process-memory persistence and asset storage so `bun dev` needs no AWS account. The first registration for `hello@dawson.gg` bootstraps the sole initial admin; every later account requires an invite.
-
-The standard task boundary is deliberately small:
+Local development uses in-memory persistence and asset storage. The first registration for `hello@dawson.gg` creates the initial admin; all later accounts require an invite.
 
 ```sh
 bun test
@@ -93,18 +94,18 @@ bun check
 bun run build
 ```
 
-Compile the native canonical-JSON inspector with ScriptC:
+To build the native canonical-JSON inspector:
 
 ```sh
 bun run scriptc
 ./tools/brief-inspect/dist/brief-inspect brief.json
 ```
 
-## AWS deployment
+## Deployment
 
-SST provisions a DynamoDB table, private S3 bucket, Pier-packaged Hono Lambda, and three static sites.
+SST provisions the DynamoDB table, private S3 bucket, Pier-packaged API Lambda, and three static sites.
 
-Passkeys bind to an exact relying-party domain. Set these before deploying:
+Passkeys are bound to the admin site's origin and relying-party ID. Configure both before the first production deployment:
 
 ```sh
 export BRIEF_APP_ORIGIN=https://admin.example.com
@@ -112,30 +113,30 @@ export BRIEF_RP_ID=admin.example.com
 bun run deploy -- --stage production
 ```
 
-Production resources are retained and protected by default. Add custom domains in `sst.config.ts` before a real release so the admin origin and relying-party ID remain stable.
+Production resources are protected from removal and retained by default.
 
 ## Repository
 
 ```text
 apps/
-  web/       Product site
-  api/       Pier + Hono API and Lambda adapter
-  admin/     Passkey login and tiny admin
+  web/       Public product and Brief reader
+  api/       Hono API and Lambda adapter
+  admin/     Passkey login and administration
   docs/      SDK and HTTP documentation
 packages/
-  sdk/       @dawsson/brief
-  core/      Document model and operations
+  sdk/       Published @dawsson/brief package
+  core/      Canonical model and operations
   renderer/  HTML, Markdown, text, and JSON
   shared/    Cross-boundary API types
-  ui/        shadcn-style UI primitives
+  ui/        Shared interface primitives
 tools/
-  brief-inspect/  ScriptC native validator
+  brief-inspect/  ScriptC canonical-JSON validator
 docs/
   architecture.md
   security.md
 ```
 
-See [architecture](docs/architecture.md) for invariants and [security](docs/security.md) for the authentication and sharing model.
+The key boundaries are documented in [Architecture](docs/architecture.md) and [Security](docs/security.md).
 
 ## License
 
