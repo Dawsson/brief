@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.1.2 - 2026-07-31
+
+- Added `brief login`, a browser-approved device flow that saves agent credentials privately and loads them automatically in the SDK.
+- Removed agent-token delivery from passkey registration so plaintext tokens never appear in the browser.
+- Added explicit passkey account creation and fixed invite URLs for the hosted admin.
+- Fixed credentialed CORS preflights across local Brief apps.
+- Refined the Brief reader shell, page navigation state, footer metadata, and code presentation.
+
 ## 0.1.1 - 2026-07-31
 
 - Hosted Brief at `brief.harbr.run` through a minimal Cloudflare-to-Lambda domain adapter.

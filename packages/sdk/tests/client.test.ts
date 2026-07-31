@@ -49,7 +49,9 @@ describe("Brief SDK", () => {
     try {
       const brief = await Brief.open(document.id, {
         fetch: (input, init) => {
-          expect(String(input)).toBe(`https://brief.example/v1/briefs/${document.id}`);
+          const requestUrl =
+            typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+          expect(requestUrl).toBe(`https://brief.example/v1/briefs/${document.id}`);
           expect(new Headers(init?.headers).get("authorization")).toBe("Bearer brief_live_saved");
           return Promise.resolve(Response.json({ data: document }));
         },
