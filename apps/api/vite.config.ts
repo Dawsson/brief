@@ -4,6 +4,12 @@ import { defineConfig } from "vite-plus";
 
 export default defineConfig(({ command }) => ({
   plugins: [devServer({ entry: "src/dev.ts" })],
+  server: {
+    cors: {
+      origin: /^http:\/\/(localhost|127\.0\.0\.1):(5173|5174|5175)$/,
+      credentials: true,
+    },
+  },
   build: {
     emptyOutDir: true,
     lib: {

@@ -22,3 +22,33 @@ describe("public Brief route", () => {
     expect(image.status).toBe(406);
   });
 });
+
+describe("browser API access", () => {
+  test("allows credentialed local app origins", async () => {
+    const app = createApp({ repository: new MemoryRepository() });
+    const origin = "http://127.0.0.1:5174";
+    const response = await app.request("/v1/auth/authenticate/options", {
+      method: "OPTIONS",
+      headers: {
+        origin,
+        "access-control-request-method": "POST",
+        "access-control-request-headers": "content-type",
+      },
+    });
+
+    expect(response.status).toBe(204);
+    expect(response.headers.get("access-control-allow-origin")).toBe(origin);
+    expect(response.headers.get("access-control-allow-credentials")).toBe("true");
+    expect(response.headers.get("vary")).toContain("Origin");
+  });
+
+  test("does not grant unknown origins browser access", async () => {
+    const app = createApp({ repository: new MemoryRepository() });
+    const response = await app.request("/healthz", {
+      headers: { origin: "https://not-brief.example" },
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("access-control-allow-origin")).toBeNull();
+  });
+});

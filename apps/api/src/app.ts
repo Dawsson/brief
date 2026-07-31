@@ -83,12 +83,15 @@ export function createApp(options: CreateAppOptions = {}) {
     "http://localhost:5173",
     "http://localhost:5174",
     "http://localhost:5175",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:5174",
+    "http://127.0.0.1:5175",
   ]);
 
   app.use(
     "*",
     cors({
-      origin: (origin) => (allowedOrigins.has(origin) ? origin : appOrigin),
+      origin: (origin) => (allowedOrigins.has(origin) ? origin : null),
       allowHeaders: ["authorization", "content-type", "accept"],
       allowMethods: ["GET", "POST", "PATCH", "DELETE", "PUT", "OPTIONS"],
       credentials: true,
