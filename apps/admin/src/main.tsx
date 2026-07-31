@@ -12,7 +12,7 @@ import { Database, FileText, HardDrive, KeyRound, Plus, Users } from "lucide-rea
 import { StrictMode, useEffect, useState, type FormEvent } from "react";
 import { createRoot } from "react-dom/client";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const API_URL = import.meta.env.DEV ? "http://localhost:4000" : window.location.origin;
 
 interface Overview {
   briefs: BriefDocument[];

@@ -4,6 +4,9 @@ import { ArrowRight, Check, Copy, FileText, SquareTerminal } from "lucide-react"
 import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 
+const adminUrl = import.meta.env.DEV ? "http://localhost:5174" : "/admin/";
+const docsUrl = import.meta.env.DEV ? "http://localhost:5175" : "/docs/";
+
 const sdkExample = [
   "const brief = await Brief.create({",
   '  title: "Deployment Report"',
@@ -120,10 +123,10 @@ function App() {
         </a>
         <nav className="flex items-center gap-1">
           <Button asChild variant="ghost" size="small">
-            <a href="http://localhost:5175">Docs</a>
+            <a href={docsUrl}>Docs</a>
           </Button>
           <Button asChild size="small">
-            <a href="http://localhost:5174">
+            <a href={adminUrl}>
               Sign in <ArrowRight size={13} />
             </a>
           </Button>
@@ -146,7 +149,7 @@ function App() {
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <Button asChild>
-                <a href="http://localhost:5175">
+                <a href={docsUrl}>
                   Read the docs <ArrowRight size={15} />
                 </a>
               </Button>

@@ -25,6 +25,11 @@ export default $config({
     const api = new pier.PierBackend("Api", {
       path: "apps/api",
       link: [table, bucket],
+      copyFiles: [
+        { from: "apps/web/dist", to: "static/web" },
+        { from: "apps/admin/dist", to: "static/admin" },
+        { from: "apps/docs/dist", to: "static/docs" },
+      ],
       environment: {
         BRIEF_TABLE: table.name,
         BRIEF_BUCKET: bucket.name,
@@ -37,24 +42,12 @@ export default $config({
         title: "Brief API",
       },
     });
-    const web = new sst.aws.StaticSite("Web", {
-      path: "apps/web",
-      build: { command: "bun run build", output: "dist" },
-      environment: { VITE_API_URL: api.url },
-      dev: { command: "bun run dev", url: "http://localhost:5173" },
-    });
-    const admin = new sst.aws.StaticSite("Admin", {
-      path: "apps/admin",
-      build: { command: "bun run build", output: "dist" },
-      environment: { VITE_API_URL: api.url },
-      dev: { command: "bun run dev", url: "http://localhost:5174" },
-    });
-    const docs = new sst.aws.StaticSite("Docs", {
-      path: "apps/docs",
-      build: { command: "bun run build", output: "dist" },
-      dev: { command: "bun run dev", url: "http://localhost:5175" },
-    });
 
-    return { api: api.url, web: web.url, admin: admin.url, docs: docs.url };
+    return {
+      api: api.url,
+      web: api.url,
+      admin: $interpolate`${api.url}admin/`,
+      docs: $interpolate`${api.url}docs/`,
+    };
   },
 });

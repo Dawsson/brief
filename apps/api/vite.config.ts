@@ -10,6 +10,9 @@ export default defineConfig({
       fileName: () => "server.js",
     },
     outDir: "dist/aws",
+    rollupOptions: { output: { entryFileNames: "server.js" } },
+    ssr: true,
     target: "node24",
   },
+  ssr: { noExternal: true },
 });

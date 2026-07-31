@@ -103,7 +103,7 @@ bun run scriptc
 
 ## Deployment
 
-SST provisions the DynamoDB table, private S3 bucket, Pier-packaged API Lambda, and three static sites.
+SST provisions the DynamoDB table, private S3 bucket, and Pier-packaged Lambda. The Lambda serves the Hono API and the built reader, admin, and docs apps from one origin, keeping passkey sessions first-party.
 
 Passkeys are bound to the admin site's origin and relying-party ID. Configure both before the first production deployment:
 
