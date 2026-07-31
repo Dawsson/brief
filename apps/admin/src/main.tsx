@@ -8,7 +8,7 @@ import {
   type PublicKeyCredentialCreationOptionsJSON,
   type PublicKeyCredentialRequestOptionsJSON,
 } from "@simplewebauthn/browser";
-import { Database, FileText, HardDrive, KeyRound, Plus, Users } from "lucide-react";
+import { Check, Copy, Database, FileText, HardDrive, KeyRound, Plus, Users } from "lucide-react";
 import { StrictMode, useEffect, useState, type FormEvent } from "react";
 import { createRoot } from "react-dom/client";
 
@@ -36,7 +36,9 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
 function SignIn({ onDone }: { onDone: () => void }) {
   const query = new URLSearchParams(location.search);
   const [email, setEmail] = useState(query.get("email") ?? "hello@dawson.gg");
+  const [apiToken, setApiToken] = useState<string>();
   const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string>();
 
   async function authenticate() {
@@ -75,16 +77,50 @@ function SignIn({ onDone }: { onDone: () => void }) {
         },
       );
       const response = await startRegistration({ optionsJSON: flow.options });
-      await api("/v1/auth/register/verify", {
+      const registration = await api<{ apiToken: string }>("/v1/auth/register/verify", {
         method: "POST",
         body: JSON.stringify({ flowId: flow.flowId, response }),
       });
-      onDone();
+      setApiToken(registration.apiToken);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not create passkey");
     } finally {
       setBusy(false);
     }
+  }
+
+  async function copyToken() {
+    if (!apiToken) return;
+    await navigator.clipboard.writeText(apiToken);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1400);
+  }
+
+  if (apiToken) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-neutral-50 px-5">
+        <section className="page-enter w-full max-w-[520px] rounded-[22px] border border-neutral-200 bg-white p-8 shadow-[0_24px_80px_rgba(0,0,0,.07)] sm:p-10">
+          <Logo />
+          <p className="mt-14 text-xs font-semibold text-blue-600">Passkey created</p>
+          <h1 className="mt-3 text-3xl font-bold tracking-[-0.04em] text-neutral-950">
+            Save your agent token.
+          </h1>
+          <p className="mt-3 text-sm leading-6 text-neutral-500">
+            Brief stores only its hash. Copy this token now; it will not be shown again.
+          </p>
+          <code className="mt-7 block break-all rounded-xl bg-neutral-950 p-5 font-mono text-xs leading-5 text-neutral-200">
+            {apiToken}
+          </code>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <Button variant="secondary" onClick={copyToken}>
+              {copied ? <Check size={15} /> : <Copy size={15} />}
+              {copied ? "Copied" : "Copy token"}
+            </Button>
+            <Button onClick={onDone}>Open Brief admin</Button>
+          </div>
+        </section>
+      </main>
+    );
   }
 
   return (
