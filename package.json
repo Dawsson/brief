@@ -10,11 +10,11 @@
   "type": "module",
   "scripts": {
     "build": "vp run -r build",
-    "check": "vp check",
+    "check": "sst install && vp check",
     "dev": "concurrently --kill-others --names api,web,admin,docs --prefix-colors blue,green,magenta,cyan \"vp run @brief/api#dev\" \"vp run @brief/web#dev\" \"vp run @brief/admin#dev\" \"vp run @brief/docs#dev\"",
     "deploy": "vp run -r build && sst deploy",
     "lint": "vp lint",
-    "ready": "vp check && vp test && vp run -r build",
+    "ready": "bun run check && vp test && vp run -r build",
     "scriptc": "vp run @brief/inspect#build",
     "test": "vp test"
   },
