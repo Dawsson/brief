@@ -4,13 +4,54 @@
 @source "./**/*.{ts,tsx}";
 
 :root {
-  font-family: "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: "Inter Variable", Inter, "Helvetica Neue", Helvetica, Arial, sans-serif;
   color: #1d1d1f;
   background: #fff;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.landing {
+  font-family: "Inter Variable", Inter, "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.landing-link {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  border-radius: 999px;
+  padding-inline: 14px;
+  color: #737373;
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  transition:
+    color 150ms ease,
+    background-color 150ms ease;
+}
+
+.landing-link:hover {
+  color: #171717;
+  background: rgb(0 0 0 / 0.035);
+}
+
+.landing-code,
+.landing-output {
+  min-height: 480px;
+}
+
+@media (min-width: 1024px) {
+  .landing-code {
+    border-right: 1px solid rgb(0 0 0 / 0.14);
+  }
+}
+
+@media (max-width: 1023px) {
+  .landing-code {
+    min-height: auto;
+  }
 }
 
 * {

@@ -1,6 +1,7 @@
+import "@fontsource-variable/inter";
 import "@brief/ui/styles.css";
 import { Button, Logo } from "@brief/ui";
-import { ArrowRight, Check, Copy, FileText, SquareTerminal } from "lucide-react";
+import { ArrowRight, Check, Copy } from "lucide-react";
 import { StrictMode, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 
@@ -12,202 +13,214 @@ const adminUrl = import.meta.env.DEV ? "http://localhost:5174/admin/" : "/admin/
 const docsUrl = import.meta.env.DEV ? "http://localhost:5175" : "/docs/";
 const createAccountUrl: string = `${adminUrl}?mode=register`;
 
-const sdkExample = [
-  "const brief = await Brief.create({",
-  '  title: "Deployment Report"',
-  "})",
-  "",
-  "brief.summary(`",
-  "  Production is healthy.",
-  "`)",
-  "brief.todo([",
-  '  "Warm cache",',
-  '  "Verify production",',
-  "])",
-  "brief.logs(stdout)",
-  "",
-  "await brief.publish()",
-].join("\n");
+const sdkExample = `const brief = await Brief.create({
+  title: "Deployment Report"
+})
 
-function ProductPreview() {
-  return (
-    <div className="relative mx-auto w-full max-w-[660px] rounded-[22px] border border-neutral-200 bg-white shadow-[0_32px_90px_rgba(0,0,0,0.1)]">
-      <div className="flex h-12 items-center gap-2 border-b border-neutral-100 px-5">
-        <span className="size-2 rounded-full bg-neutral-200" />
-        <span className="size-2 rounded-full bg-neutral-200" />
-        <span className="size-2 rounded-full bg-neutral-200" />
-        <span className="mx-auto -translate-x-5 text-[10px] font-medium text-neutral-400">
-          brief.harbr.run/b/16230282
-        </span>
-      </div>
-      <div className="grid min-h-[430px] grid-cols-[130px_1fr] sm:grid-cols-[170px_1fr]">
-        <aside className="border-r border-neutral-100 p-5 sm:p-7">
-          <Logo compact />
-          <p className="mt-10 text-[9px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
-            Pages
-          </p>
-          {["Overview", "Logs", "Metrics"].map((item, index) => (
-            <p
-              key={item}
-              className={`mt-3 text-[11px] ${index === 0 ? "font-semibold text-neutral-900" : "text-neutral-400"}`}
-            >
-              {item}
-            </p>
-          ))}
-        </aside>
-        <article className="overflow-hidden px-7 py-10 sm:px-12 sm:py-12">
-          <p className="text-[10px] font-semibold text-blue-600">Deployment</p>
-          <h2 className="mt-3 max-w-sm text-[32px] font-bold leading-[1.02] tracking-[-0.05em] text-neutral-950 sm:text-[42px]">
-            Production is healthy.
-          </h2>
-          <p className="mt-4 text-[13px] leading-relaxed text-neutral-500">
-            All services are responding normally. The release completed in 4m 12s.
-          </p>
-          <div className="mt-9 space-y-3">
-            {["Database migrations complete", "Warm cache", "Verify production"].map(
-              (item, index) => (
-                <div
-                  key={item}
-                  className={`flex items-center gap-3 text-[11px] ${index < 2 ? "text-neutral-400 line-through" : "text-neutral-700"}`}
-                >
-                  <span
-                    className={`grid size-4 place-items-center rounded-[5px] border ${index < 2 ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-300"}`}
-                  >
-                    {index < 2 ? <Check size={10} strokeWidth={3} /> : null}
-                  </span>
-                  {item}
-                </div>
-              ),
-            )}
-          </div>
-          <div className="mt-9 rounded-xl bg-neutral-950 p-4 font-mono text-[9px] leading-5 text-neutral-300">
-            <span className="text-emerald-400">✓</span> api /readyz 200
-            <br />
-            <span className="text-emerald-400">✓</span> web / 200
-            <br />
-            <span className="text-neutral-600">→</span> warming edge cache
-          </div>
-        </article>
-      </div>
-    </div>
-  );
-}
+brief.summary("Production is healthy.")
+brief.metric("Availability", "99.99%")
+brief.todo([
+  "Warm cache",
+  "Verify production",
+])
 
-function CodePanel() {
+await brief.publish()`;
+
+function CodeExample() {
   const [copied, setCopied] = useState(false);
+
   async function copy() {
     await navigator.clipboard.writeText(sdkExample);
     setCopied(true);
-    window.setTimeout(() => setCopied(false), 1300);
+    window.setTimeout(() => setCopied(false), 1400);
   }
+
   return (
-    <div className="overflow-hidden rounded-[18px] border border-neutral-800 bg-[#18181b] shadow-2xl shadow-black/10">
-      <div className="flex h-11 items-center justify-between border-b border-neutral-800 px-4 text-[11px] text-neutral-500">
-        <span>deployment.ts</span>
+    <div className="landing-code min-w-0 bg-[#171716] text-[#d8d7d2]">
+      <div className="flex h-12 items-center justify-between border-b border-white/[0.08] px-5">
+        <span className="text-[12px] text-white/40">deployment.ts</span>
         <button
-          className="grid size-8 place-items-center rounded-lg transition-colors hover:bg-neutral-800 hover:text-white"
+          className="grid size-8 place-items-center rounded-md text-white/35 transition-colors hover:bg-white/[0.07] hover:text-white"
           onClick={copy}
           aria-label="Copy SDK example"
         >
           {copied ? <Check size={14} /> : <Copy size={14} />}
         </button>
       </div>
-      <pre className="overflow-x-auto p-5 text-[12px] leading-6 text-neutral-300 sm:p-7">
-        <code>{sdkExample}</code>
+      <pre className="overflow-x-auto p-6 text-[12px] leading-[1.8] sm:p-8 sm:text-[13px]">
+        <code>
+          <span className="text-[#c9a7e8]">const</span> brief ={" "}
+          <span className="text-[#c9a7e8]">await</span>{" "}
+          <span className="text-[#8fb7df]">Brief</span>.create({`({\n`}){"  "}title:{" "}
+          <span className="text-[#b7cc9b]">&quot;Deployment Report&quot;</span>
+          {`\n})\n\n`}
+          brief.summary(<span className="text-[#b7cc9b]">&quot;Production is healthy.&quot;</span>)
+          {`\n`}brief.metric(<span className="text-[#b7cc9b]">&quot;Availability&quot;</span>,{" "}
+          <span className="text-[#b7cc9b]">&quot;99.99%&quot;</span>){`\n`}brief.todo({`([\n`})
+          {"  "}
+          <span className="text-[#b7cc9b]">&quot;Warm cache&quot;</span>,{`\n  `}
+          <span className="text-[#b7cc9b]">&quot;Verify production&quot;</span>,{`\n])\n\n`}
+          <span className="text-[#c9a7e8]">await</span> brief.publish()
+        </code>
       </pre>
+    </div>
+  );
+}
+
+function BriefExample() {
+  return (
+    <div className="landing-output min-w-0 bg-[#fbfbf9]">
+      <div className="flex h-12 items-center justify-between border-b border-black/[0.07] px-5">
+        <span className="text-[12px] text-neutral-400">brief.harbr.run/b/16230282</span>
+        <span className="flex items-center gap-1.5 text-[11px] text-neutral-400">
+          <span className="size-1.5 rounded-full bg-emerald-500" /> Published
+        </span>
+      </div>
+      <div className="px-7 py-9 sm:px-12 sm:py-12">
+        <p className="text-[11px] font-medium text-blue-600">Deployment · July 31, 2026</p>
+        <h2 className="mt-3 max-w-md text-[34px] font-semibold leading-[1.02] tracking-[-0.045em] text-[#20201f] sm:text-[44px]">
+          Production is healthy.
+        </h2>
+        <p className="mt-4 max-w-md text-[13px] leading-6 text-neutral-500">
+          All systems are operating normally after a four-minute release.
+        </p>
+
+        <div className="mt-9 border-t border-black/[0.08] pt-7">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-400">
+            Availability
+          </p>
+          <p className="mt-1 text-[28px] font-semibold tracking-[-0.04em] text-[#20201f]">99.99%</p>
+        </div>
+
+        <div className="mt-7 space-y-3 border-t border-black/[0.08] pt-7">
+          {["Warm cache", "Verify production"].map((item, index) => (
+            <div key={item} className="flex items-center gap-3 text-[12px] text-neutral-600">
+              <span
+                className={`grid size-4 place-items-center rounded-[4px] border ${
+                  index === 0
+                    ? "border-[#20201f] bg-[#20201f] text-white"
+                    : "border-neutral-300 bg-white"
+                }`}
+              >
+                {index === 0 ? <Check size={10} strokeWidth={3} /> : null}
+              </span>
+              <span className={index === 0 ? "text-neutral-400 line-through" : undefined}>
+                {item}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
 
 function App() {
   return (
-    <div className="overflow-hidden bg-white">
-      <header className="mx-auto flex h-20 w-[min(1180px,calc(100%-40px))] items-center justify-between">
+    <div className="landing min-h-screen bg-[#fbfbf9] text-[#20201f]">
+      <header className="mx-auto flex h-[72px] w-[min(1120px,calc(100%-40px))] items-center justify-between border-b border-black/[0.07]">
         <a href="/" aria-label="Brief home">
           <Logo />
         </a>
-        <nav className="flex items-center gap-1">
-          <Button asChild className="hidden sm:inline-flex" variant="ghost" size="small">
-            <a href={docsUrl}>Docs</a>
-          </Button>
-          <Button asChild variant="ghost" size="small">
+        <nav className="flex items-center gap-1" aria-label="Primary navigation">
+          <a className="landing-link hidden sm:inline-flex" href={docsUrl}>
+            Docs
+          </a>
+          <a className="landing-link" href="https://github.com/Dawsson/brief">
+            GitHub
+          </a>
+          <Button asChild className="ml-2" size="small">
             <a href={adminUrl}>Sign in</a>
-          </Button>
-          <Button asChild size="small">
-            <a href={createAccountUrl}>
-              Create account <ArrowRight size={13} />
-            </a>
           </Button>
         </nav>
       </header>
 
       <main>
-        <section className="page-enter mx-auto grid w-[min(1180px,calc(100%-40px))] gap-16 pb-28 pt-24 lg:grid-cols-[0.88fr_1.12fr] lg:items-center lg:pb-40 lg:pt-32">
-          <div>
-            <p className="mb-6 flex items-center gap-2 text-xs font-semibold text-neutral-500">
-              <span className="size-1.5 rounded-full bg-blue-600" />
-              Built for AI agents
-            </p>
-            <h1 className="max-w-[660px] text-[clamp(56px,8vw,96px)] font-bold leading-[0.92] tracking-[-0.065em] text-neutral-950">
-              A better way to report.
-            </h1>
-            <p className="mt-8 max-w-lg text-[19px] leading-[1.55] tracking-[-0.015em] text-neutral-500">
-              Agents publish structured Briefs. People read clear, beautiful reports. One URL serves
-              both.
-            </p>
-            <div className="mt-9 flex flex-wrap gap-3">
-              <Button asChild>
-                <a href={docsUrl}>
-                  Read the docs <ArrowRight size={15} />
-                </a>
-              </Button>
-              <Button asChild variant="secondary">
-                <a href="https://github.com/Dawsson/brief">View on GitHub</a>
-              </Button>
-            </div>
-          </div>
-          <ProductPreview />
-        </section>
-
-        <section className="border-y border-neutral-100 bg-neutral-50/70 py-28 sm:py-36">
-          <div className="mx-auto grid w-[min(1060px,calc(100%-40px))] gap-16 lg:grid-cols-2 lg:items-center">
-            <div>
-              <p className="text-xs font-semibold text-blue-600">TypeScript first</p>
-              <h2 className="mt-4 max-w-md text-4xl font-bold tracking-[-0.045em] text-neutral-950 sm:text-5xl">
-                Write what happened. Brief handles the rest.
-              </h2>
-              <p className="mt-6 max-w-md text-base leading-7 text-neutral-500">
-                The SDK produces operations, operations produce state, and one renderer turns that
-                state into HTML, Markdown, plain text, or canonical JSON.
-              </p>
-              <div className="mt-9 grid gap-4 text-sm text-neutral-700 sm:grid-cols-2">
-                <span className="flex items-center gap-2">
-                  <FileText size={16} /> Stable block IDs
-                </span>
-                <span className="flex items-center gap-2">
-                  <SquareTerminal size={16} /> Content negotiation
-                </span>
-              </div>
-            </div>
-            <CodePanel />
+        <section className="page-enter mx-auto w-[min(920px,calc(100%-40px))] pb-20 pt-24 text-center sm:pb-28 sm:pt-36">
+          <p className="text-[12px] font-medium text-neutral-500">Reports, built for agents</p>
+          <h1 className="mx-auto mt-6 max-w-[800px] text-[clamp(48px,7vw,82px)] font-semibold leading-[0.98] tracking-[-0.06em] text-[#20201f]">
+            Publish work worth reading.
+          </h1>
+          <p className="mx-auto mt-7 max-w-[590px] text-[17px] leading-7 tracking-[-0.012em] text-neutral-500 sm:text-[19px] sm:leading-8">
+            Brief gives AI agents a simple TypeScript SDK for creating clear, structured
+            reports—beautiful for people and readable by machines.
+          </p>
+          <div className="mt-9 flex items-center justify-center gap-5">
+            <Button asChild>
+              <a href={createAccountUrl}>Create an account</a>
+            </Button>
+            <a
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-neutral-700 hover:text-black"
+              href={docsUrl}
+            >
+              Read the docs <ArrowRight size={14} />
+            </a>
           </div>
         </section>
 
-        <section className="mx-auto w-[min(1060px,calc(100%-40px))] py-28 text-center sm:py-40">
-          <p className="text-xs font-semibold text-neutral-400">THE WHOLE IDEA</p>
-          <h2 className="mx-auto mt-6 max-w-3xl text-5xl font-bold leading-[1.02] tracking-[-0.055em] text-neutral-950 sm:text-7xl">
+        <section className="mx-auto w-[min(1120px,calc(100%-24px))] sm:w-[min(1120px,calc(100%-40px))]">
+          <div className="overflow-hidden rounded-[18px] border border-black/[0.1] shadow-[0_24px_80px_rgba(31,31,27,0.08)] lg:grid lg:grid-cols-2">
+            <CodeExample />
+            <BriefExample />
+          </div>
+          <div className="mt-5 flex items-center justify-center gap-3 text-[11px] text-neutral-400">
+            <span>TypeScript in</span>
+            <span className="h-px w-7 bg-neutral-300" />
+            <span>HTML, Markdown, text, or JSON out</span>
+          </div>
+        </section>
+
+        <section className="mx-auto grid w-[min(920px,calc(100%-40px))] gap-12 py-28 sm:grid-cols-3 sm:py-40">
+          {[
+            ["Create", "Use a small, expressive SDK. No document schemas or low-level JSON."],
+            [
+              "Update",
+              "Every block has a stable ID, so agents can append, replace, or check off work.",
+            ],
+            [
+              "Consume",
+              "One URL responds in the right format through standard HTTP content negotiation.",
+            ],
+          ].map(([title, body], index) => (
+            <article key={title}>
+              <span className="text-[11px] font-medium tabular-nums text-neutral-400">
+                0{index + 1}
+              </span>
+              <h2 className="mt-5 text-[16px] font-semibold tracking-[-0.02em]">{title}</h2>
+              <p className="mt-3 text-[14px] leading-6 text-neutral-500">{body}</p>
+            </article>
+          ))}
+        </section>
+
+        <section className="mx-auto w-[min(1120px,calc(100%-40px))] border-t border-black/[0.08] py-24 text-center sm:py-32">
+          <h2 className="text-[clamp(34px,5vw,54px)] font-semibold tracking-[-0.05em]">
             Agents create Briefs.
           </h2>
-          <p className="mx-auto mt-6 max-w-xl text-lg leading-7 text-neutral-500">
-            Not a CMS. Not a page builder. Just the obvious way for an agent to leave behind
-            something worth reading.
+          <p className="mx-auto mt-4 max-w-md text-[15px] leading-6 text-neutral-500">
+            Not a CMS. Not a page builder. Just a clear record of what happened.
           </p>
+          <a
+            className="mt-7 inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700"
+            href={docsUrl}
+          >
+            Get started <ArrowRight size={14} />
+          </a>
         </section>
       </main>
 
-      <footer className="mx-auto flex w-[min(1180px,calc(100%-40px))] items-center justify-between border-t border-neutral-100 py-8 text-xs text-neutral-400">
-        <Logo compact />
-        <span>Open source · MIT</span>
+      <footer className="mx-auto flex w-[min(1120px,calc(100%-40px))] flex-col gap-5 border-t border-black/[0.08] py-8 text-[12px] text-neutral-400 sm:flex-row sm:items-center sm:justify-between">
+        <span>Brief · Open source under MIT</span>
+        <div className="flex gap-5">
+          <a className="hover:text-neutral-700" href={docsUrl}>
+            Docs
+          </a>
+          <a className="hover:text-neutral-700" href="https://www.npmjs.com/package/@dawsson/brief">
+            npm
+          </a>
+          <a className="hover:text-neutral-700" href="https://github.com/Dawsson/brief">
+            GitHub
+          </a>
+        </div>
       </footer>
     </div>
   );
