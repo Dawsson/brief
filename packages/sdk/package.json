@@ -20,6 +20,9 @@
     "url": "git+https://github.com/Dawsson/brief.git",
     "directory": "packages/sdk"
   },
+  "bin": {
+    "brief": "./dist/cli.mjs"
+  },
   "files": [
     "dist",
     "README.md",

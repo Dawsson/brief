@@ -70,21 +70,22 @@ function environment(name: "BRIEF_API_TOKEN" | "BRIEF_API_URL"): string | undefi
 }
 
 class Transport {
-  readonly apiUrl: string;
+  apiUrl: string;
   readonly fetcher: typeof globalThis.fetch;
-  readonly token: string | undefined;
+  private readonly hasExplicitApiUrl: boolean;
+  private loadedStoredCredentials = false;
+  private token: string | undefined;
 
   constructor(options: BriefClientOptions) {
-    this.apiUrl = (
-      options.apiUrl ??
-      environment("BRIEF_API_URL") ??
-      "http://localhost:4000"
-    ).replace(/\/$/, "");
+    const configuredApiUrl = options.apiUrl ?? environment("BRIEF_API_URL");
+    this.hasExplicitApiUrl = configuredApiUrl !== undefined;
+    this.apiUrl = (configuredApiUrl ?? "http://localhost:4000").replace(/\/$/, "");
     this.fetcher = options.fetch ?? globalThis.fetch;
     this.token = options.token ?? environment("BRIEF_API_TOKEN");
   }
 
   async request<T>(path: string, init: RequestInit = {}): Promise<T> {
+    await this.loadStoredCredentials();
     const headers = new Headers(init.headers);
     headers.set("accept", "application/json");
     if (init.body) headers.set("content-type", "application/json");
@@ -95,6 +96,16 @@ class Transport {
       throw new Error(`Brief API ${response.status}: ${detail || response.statusText}`);
     }
     return response.json() as Promise<T>;
+  }
+
+  private async loadStoredCredentials(): Promise<void> {
+    if (this.loadedStoredCredentials || this.token || typeof process === "undefined") return;
+    this.loadedStoredCredentials = true;
+    const { readStoredCredentials } = await import("./credentials");
+    const stored = await readStoredCredentials();
+    if (!stored) return;
+    if (!this.hasExplicitApiUrl) this.apiUrl = stored.apiUrl.replace(/\/$/, "");
+    if (stored.apiUrl.replace(/\/$/, "") === this.apiUrl) this.token = stored.token;
   }
 }
 
