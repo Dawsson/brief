@@ -4,8 +4,9 @@ import { ArrowRight, Check, Copy, FileText, SquareTerminal } from "lucide-react"
 import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 
-const adminUrl = import.meta.env.DEV ? "http://localhost:5174" : "/admin/";
+const adminUrl = import.meta.env.DEV ? "http://localhost:5174/admin/" : "/admin/";
 const docsUrl = import.meta.env.DEV ? "http://localhost:5175" : "/docs/";
+const createAccountUrl = `${adminUrl}?mode=register`;
 
 const sdkExample = [
   "const brief = await Brief.create({",
@@ -122,12 +123,15 @@ function App() {
           <Logo />
         </a>
         <nav className="flex items-center gap-1">
-          <Button asChild variant="ghost" size="small">
+          <Button asChild className="hidden sm:inline-flex" variant="ghost" size="small">
             <a href={docsUrl}>Docs</a>
           </Button>
+          <Button asChild variant="ghost" size="small">
+            <a href={adminUrl}>Sign in</a>
+          </Button>
           <Button asChild size="small">
-            <a href={adminUrl}>
-              Sign in <ArrowRight size={13} />
+            <a href={createAccountUrl}>
+              Create account <ArrowRight size={13} />
             </a>
           </Button>
         </nav>

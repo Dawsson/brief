@@ -8,7 +8,17 @@ import {
   type PublicKeyCredentialCreationOptionsJSON,
   type PublicKeyCredentialRequestOptionsJSON,
 } from "@simplewebauthn/browser";
-import { Check, Copy, Database, FileText, HardDrive, KeyRound, Plus, Users } from "lucide-react";
+import {
+  Check,
+  Copy,
+  Database,
+  FileText,
+  HardDrive,
+  KeyRound,
+  Plus,
+  UserPlus,
+  Users,
+} from "lucide-react";
 import { StrictMode, useEffect, useState, type FormEvent } from "react";
 import { createRoot } from "react-dom/client";
 
@@ -29,12 +39,28 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
     headers,
   });
-  if (!response.ok) throw new Error((await response.text()) || response.statusText);
+  if (!response.ok) {
+    const body = (await response.json().catch(() => undefined)) as
+      | { error?: { message?: string } }
+      | undefined;
+    throw new Error(body?.error?.message ?? response.statusText);
+  }
   return response.json() as Promise<T>;
+}
+
+function inviteRegistrationUrl(token: string, email: string): string {
+  const url = new URL(import.meta.env.BASE_URL, location.origin);
+  url.searchParams.set("invite", token);
+  url.searchParams.set("email", email);
+  return url.toString();
 }
 
 function SignIn({ onDone }: { onDone: () => void }) {
   const query = new URLSearchParams(location.search);
+  const hasInvite = query.has("invite");
+  const [mode, setMode] = useState<"register" | "sign-in">(
+    hasInvite || query.get("mode") === "register" ? "register" : "sign-in",
+  );
   const [email, setEmail] = useState(query.get("email") ?? "hello@dawson.gg");
   const [apiToken, setApiToken] = useState<string>();
   const [busy, setBusy] = useState(false);
@@ -96,6 +122,15 @@ function SignIn({ onDone }: { onDone: () => void }) {
     window.setTimeout(() => setCopied(false), 1400);
   }
 
+  function switchMode(nextMode: "register" | "sign-in") {
+    const url = new URL(location.href);
+    if (nextMode === "register") url.searchParams.set("mode", "register");
+    else url.searchParams.delete("mode");
+    history.replaceState(null, "", url);
+    setError(undefined);
+    setMode(nextMode);
+  }
+
   if (apiToken) {
     return (
       <main className="grid min-h-screen place-items-center bg-neutral-50 px-5">
@@ -123,15 +158,21 @@ function SignIn({ onDone }: { onDone: () => void }) {
     );
   }
 
+  const registering = mode === "register";
+
   return (
     <main className="grid min-h-screen place-items-center bg-neutral-50 px-5">
       <section className="page-enter w-full max-w-[420px] rounded-[22px] border border-neutral-200 bg-white p-8 shadow-[0_24px_80px_rgba(0,0,0,.07)] sm:p-10">
         <Logo />
         <h1 className="mt-14 text-3xl font-bold tracking-[-0.04em] text-neutral-950">
-          Use your passkey.
+          {registering ? "Create your account." : "Use your passkey."}
         </h1>
         <p className="mt-3 text-sm leading-6 text-neutral-500">
-          Brief has no passwords and no recovery codes. Your device is the key.
+          {registering
+            ? hasInvite
+              ? "Your invite is ready. Create a passkey to finish joining Brief."
+              : "Brief is invite-only. Create the first admin account or open an invite link."
+            : "Brief has no passwords and no recovery codes. Your device is the key."}
         </p>
         <label className="mt-9 block text-xs font-semibold text-neutral-700" htmlFor="email">
           Email
@@ -144,19 +185,31 @@ function SignIn({ onDone }: { onDone: () => void }) {
           className="mt-2 h-12 w-full rounded-xl border border-neutral-200 px-4 text-sm outline-none transition-shadow focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
         />
         {error ? <p className="mt-3 text-xs leading-5 text-red-600">{error}</p> : null}
-        <Button className="mt-6 w-full" disabled={busy} onClick={authenticate}>
-          <KeyRound size={15} />
-          {busy ? "Waiting for passkey…" : "Continue with passkey"}
-        </Button>
-        <button
-          className="mt-5 w-full text-center text-xs text-neutral-400 hover:text-neutral-700"
+        <Button
+          className="mt-6 w-full"
           disabled={busy}
-          onClick={register}
+          onClick={registering ? register : authenticate}
         >
-          {query.has("invite")
-            ? "Accept invite and create passkey"
-            : "First time? Create the admin passkey"}
-        </button>
+          {registering ? <UserPlus size={15} /> : <KeyRound size={15} />}
+          {busy
+            ? "Waiting for passkey…"
+            : registering
+              ? hasInvite
+                ? "Accept invite and create passkey"
+                : "Create account with passkey"
+              : "Continue with passkey"}
+        </Button>
+        <p className="mt-6 text-center text-xs text-neutral-400">
+          {registering ? "Already have an account?" : "New to Brief?"}{" "}
+          <button
+            className="font-medium text-neutral-700 underline decoration-neutral-300 underline-offset-4 hover:text-neutral-950"
+            disabled={busy}
+            onClick={() => switchMode(registering ? "sign-in" : "register")}
+            type="button"
+          >
+            {registering ? "Sign in" : "Create account with a passkey"}
+          </button>
+        </p>
       </section>
     </main>
   );
@@ -183,9 +236,7 @@ function Dashboard({ data, refresh }: { data: Overview; refresh: () => void }) {
       method: "POST",
       body: JSON.stringify({ email, role: "user" }),
     });
-    setInviteUrl(
-      `${location.origin}?invite=${encodeURIComponent(response.token)}&email=${encodeURIComponent(email)}`,
-    );
+    setInviteUrl(inviteRegistrationUrl(response.token, email));
     setEmail("");
     refresh();
   }

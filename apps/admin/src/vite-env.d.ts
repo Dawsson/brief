@@ -1,4 +1,5 @@
 interface ImportMetaEnv {
+  readonly BASE_URL: string;
   readonly DEV: boolean;
   readonly VITE_API_URL?: string;
 }
