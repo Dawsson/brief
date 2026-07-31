@@ -1,0 +1,18 @@
+{
+  "name": "@brief/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "scripts": {
+    "build": "vp pack"
+  },
+  "dependencies": {
+    "@brief/core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.2",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}

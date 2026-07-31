@@ -1,0 +1,10 @@
+{
+  "name": "@brief/inspect",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "scriptc build src/index.ts --backend c --out dist/brief-inspect",
+    "test": "scriptc run src/index.ts --help"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "name": "@dawsson/brief",
+  "version": "0.1.0",
+  "description": "The TypeScript SDK for beautiful, structured agent reports.",
+  "keywords": [
+    "agents",
+    "ai",
+    "brief",
+    "reports",
+    "typescript"
+  ],
+  "homepage": "https://github.com/Dawsson/brief#readme",
+  "bugs": {
+    "url": "https://github.com/Dawsson/brief/issues"
+  },
+  "license": "MIT",
+  "author": "Dawson Botsford <hello@dawson.gg>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Dawsson/brief.git",
+    "directory": "packages/sdk"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "scripts": {
+    "build": "vp pack",
+    "prepublishOnly": "vp run build",
+    "test": "vp test"
+  },
+  "devDependencies": {
+    "@brief/core": "workspace:*",
+    "typescript": "^6.0.2",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}
