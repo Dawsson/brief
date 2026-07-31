@@ -17,6 +17,11 @@ export default $config({
     };
   },
   async run() {
+    const productionOrigin = "https://n3juzrpd275natuxedlcxg7gx40bvqjr.lambda-url.us-east-1.on.aws";
+    const appOrigin =
+      process.env.BRIEF_APP_ORIGIN ??
+      ($app.stage === "production" ? productionOrigin : "http://localhost:5174");
+
     const table = new sst.aws.Dynamo("Database", {
       fields: { pk: "string", sk: "string" },
       primaryIndex: { hashKey: "pk", rangeKey: "sk" },
@@ -35,8 +40,8 @@ export default $config({
         BRIEF_TABLE: table.name,
         BRIEF_BUCKET: bucket.name,
         BRIEF_ADMIN_EMAIL: "hello@dawson.gg",
-        BRIEF_APP_ORIGIN: process.env.BRIEF_APP_ORIGIN ?? "http://localhost:5174",
-        BRIEF_RP_ID: process.env.BRIEF_RP_ID ?? "localhost",
+        BRIEF_APP_ORIGIN: appOrigin,
+        BRIEF_RP_ID: process.env.BRIEF_RP_ID ?? new URL(appOrigin).hostname,
       },
       build: {
         command: "bun run build:watch",
