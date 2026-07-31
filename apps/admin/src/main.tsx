@@ -9,15 +9,16 @@ import {
   type PublicKeyCredentialRequestOptionsJSON,
 } from "@simplewebauthn/browser";
 import {
-  Check,
-  Copy,
   Database,
   FileText,
   HardDrive,
   KeyRound,
   Plus,
+  ShieldCheck,
+  Terminal,
   UserPlus,
   Users,
+  X,
 } from "lucide-react";
 import { StrictMode, useEffect, useState, type FormEvent } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -33,6 +34,12 @@ interface Overview {
   invites: InviteSummary[];
   storageBytes: number;
   users: UserSummary[];
+}
+
+interface DeviceAuthorization {
+  expiresAt: string;
+  status: "approved" | "consumed" | "denied" | "pending";
+  userCode: string;
 }
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
@@ -66,9 +73,7 @@ function SignIn({ onDone }: { onDone: () => void }) {
     hasInvite || query.get("mode") === "register" ? "register" : "sign-in",
   );
   const [email, setEmail] = useState(query.get("email") ?? "hello@dawson.gg");
-  const [apiToken, setApiToken] = useState<string>();
   const [busy, setBusy] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string>();
 
   async function authenticate() {
@@ -107,23 +112,16 @@ function SignIn({ onDone }: { onDone: () => void }) {
         },
       );
       const response = await startRegistration({ optionsJSON: flow.options });
-      const registration = await api<{ apiToken: string }>("/v1/auth/register/verify", {
+      await api("/v1/auth/register/verify", {
         method: "POST",
         body: JSON.stringify({ flowId: flow.flowId, response }),
       });
-      setApiToken(registration.apiToken);
+      onDone();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not create passkey");
     } finally {
       setBusy(false);
     }
-  }
-
-  async function copyToken() {
-    if (!apiToken) return;
-    await navigator.clipboard.writeText(apiToken);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1400);
   }
 
   function switchMode(nextMode: "register" | "sign-in") {
@@ -135,34 +133,8 @@ function SignIn({ onDone }: { onDone: () => void }) {
     setMode(nextMode);
   }
 
-  if (apiToken) {
-    return (
-      <main className="grid min-h-screen place-items-center bg-neutral-50 px-5">
-        <section className="page-enter w-full max-w-[520px] rounded-[22px] border border-neutral-200 bg-white p-8 shadow-[0_24px_80px_rgba(0,0,0,.07)] sm:p-10">
-          <Logo />
-          <p className="mt-14 text-xs font-semibold text-blue-600">Passkey created</p>
-          <h1 className="mt-3 text-3xl font-bold tracking-[-0.04em] text-neutral-950">
-            Save your agent token.
-          </h1>
-          <p className="mt-3 text-sm leading-6 text-neutral-500">
-            Brief stores only its hash. Copy this token now; it will not be shown again.
-          </p>
-          <code className="mt-7 block break-all rounded-xl bg-neutral-950 p-5 font-mono text-xs leading-5 text-neutral-200">
-            {apiToken}
-          </code>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <Button variant="secondary" onClick={copyToken}>
-              {copied ? <Check size={15} /> : <Copy size={15} />}
-              {copied ? "Copied" : "Copy token"}
-            </Button>
-            <Button onClick={onDone}>Open Brief admin</Button>
-          </div>
-        </section>
-      </main>
-    );
-  }
-
   const registering = mode === "register";
+  const reviewingDevice = query.has("device");
 
   return (
     <main className="grid min-h-screen place-items-center bg-neutral-50 px-5">
@@ -176,7 +148,9 @@ function SignIn({ onDone }: { onDone: () => void }) {
             ? hasInvite
               ? "Your invite is ready. Create a passkey to finish joining Brief."
               : "Brief is invite-only. Create the first admin account or open an invite link."
-            : "Brief has no passwords and no recovery codes. Your device is the key."}
+            : reviewingDevice
+              ? "Sign in with your passkey to review the CLI connection request."
+              : "Brief has no passwords and no recovery codes. Your device is the key."}
         </p>
         <label className="mt-9 block text-xs font-semibold text-neutral-700" htmlFor="email">
           Email
@@ -214,6 +188,106 @@ function SignIn({ onDone }: { onDone: () => void }) {
             {registering ? "Sign in" : "Create account with a passkey"}
           </button>
         </p>
+      </section>
+    </main>
+  );
+}
+
+function DeviceApproval({ code, user }: { code: string; user: UserSummary }) {
+  const [authorization, setAuthorization] = useState<DeviceAuthorization>();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string>();
+
+  useEffect(() => {
+    api<{ data: DeviceAuthorization }>(`/v1/auth/device/${encodeURIComponent(code)}`)
+      .then((response) => setAuthorization(response.data))
+      .catch((cause: unknown) =>
+        setError(cause instanceof Error ? cause.message : "Could not load this request"),
+      );
+  }, [code]);
+
+  async function decide(decision: "approve" | "deny") {
+    setBusy(true);
+    setError(undefined);
+    try {
+      const response = await api<{ data: Pick<DeviceAuthorization, "status"> }>(
+        `/v1/auth/device/${encodeURIComponent(code)}/${decision}`,
+        { method: "POST" },
+      );
+      setAuthorization((current) =>
+        current ? { ...current, status: response.data.status } : current,
+      );
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not update this request");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const finished = authorization?.status && authorization.status !== "pending";
+
+  return (
+    <main className="grid min-h-screen place-items-center bg-neutral-50 px-5">
+      <section className="page-enter w-full max-w-[460px] rounded-[22px] border border-neutral-200 bg-white p-8 shadow-[0_24px_80px_rgba(0,0,0,.07)] sm:p-10">
+        <Logo />
+        <p className="mt-14 text-xs font-semibold text-blue-600">Agent access</p>
+        <h1 className="mt-3 text-3xl font-bold tracking-[-0.04em] text-neutral-950">
+          {authorization?.status === "approved"
+            ? "CLI connected."
+            : authorization?.status === "denied"
+              ? "Request denied."
+              : authorization?.status === "consumed"
+                ? "Request completed."
+                : "Connect this CLI?"}
+        </h1>
+        <p className="mt-3 text-sm leading-6 text-neutral-500">
+          {finished
+            ? "You can close this page and return to your terminal."
+            : `A Brief CLI is asking to connect as ${user.email}. Only continue if this code matches your terminal.`}
+        </p>
+        <code className="mt-8 block rounded-xl bg-neutral-100 px-5 py-4 text-center font-mono text-xl font-semibold tracking-[0.14em] text-neutral-900">
+          {authorization?.userCode ?? code.toUpperCase()}
+        </code>
+        {error ? <p className="mt-4 text-xs leading-5 text-red-600">{error}</p> : null}
+        {!finished ? (
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <Button
+              variant="secondary"
+              disabled={busy || !authorization}
+              onClick={() => decide("deny")}
+            >
+              <X size={15} /> Deny
+            </Button>
+            <Button disabled={busy || !authorization} onClick={() => decide("approve")}>
+              <ShieldCheck size={15} /> {busy ? "Working…" : "Approve"}
+            </Button>
+          </div>
+        ) : null}
+        {!finished ? (
+          <p className="mt-5 text-center text-[11px] leading-5 text-neutral-400">
+            The token is delivered directly to the CLI and is never shown in this browser.
+          </p>
+        ) : null}
+      </section>
+    </main>
+  );
+}
+
+function AccountHome({ user }: { user: UserSummary }) {
+  return (
+    <main className="grid min-h-screen place-items-center bg-neutral-50 px-5">
+      <section className="page-enter w-full max-w-[460px] rounded-[22px] border border-neutral-200 bg-white p-8 shadow-[0_24px_80px_rgba(0,0,0,.07)] sm:p-10">
+        <Logo />
+        <p className="mt-14 text-xs font-semibold text-blue-600">Account ready</p>
+        <h1 className="mt-3 text-3xl font-bold tracking-[-0.04em] text-neutral-950">
+          Connect your agent.
+        </h1>
+        <p className="mt-3 text-sm leading-6 text-neutral-500">
+          Signed in as {user.email}. Run this once on the machine where your agent works.
+        </p>
+        <code className="mt-7 flex items-center gap-3 rounded-xl bg-neutral-950 p-5 font-mono text-xs text-neutral-200">
+          <Terminal size={15} className="shrink-0 text-neutral-500" /> bunx @dawsson/brief login
+        </code>
       </section>
     </main>
   );
@@ -323,11 +397,17 @@ function Dashboard({ data, refresh }: { data: Overview; refresh: () => void }) {
 }
 
 function App() {
+  const deviceCode = new URLSearchParams(location.search).get("device");
   const [data, setData] = useState<Overview>();
+  const [user, setUser] = useState<UserSummary>();
   const [unauthorized, setUnauthorized] = useState(false);
   async function refresh() {
     try {
-      setData(await api<Overview>("/v1/admin/overview"));
+      const session = await api<{ data: UserSummary }>("/v1/auth/session");
+      setUser(session.data);
+      if (session.data.role === "admin" && !deviceCode) {
+        setData(await api<Overview>("/v1/admin/overview"));
+      }
       setUnauthorized(false);
     } catch {
       setUnauthorized(true);
@@ -337,12 +417,15 @@ function App() {
     void refresh();
   }, []);
   if (unauthorized) return <SignIn onDone={refresh} />;
-  if (!data)
+  if (!user)
     return (
       <main className="grid min-h-screen place-items-center text-sm text-neutral-400">
         Opening Brief…
       </main>
     );
+  if (deviceCode) return <DeviceApproval code={deviceCode} user={user} />;
+  if (user.role !== "admin") return <AccountHome user={user} />;
+  if (!data) return null;
   return <Dashboard data={data} refresh={refresh} />;
 }
 
