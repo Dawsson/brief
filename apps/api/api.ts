@@ -1,4 +1,4 @@
-import { defineApi } from "@pier/backend";
+import { defineApi } from "@pier/backend/pier-api";
 
 export default defineApi({
   docs: false,
