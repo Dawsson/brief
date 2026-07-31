@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Hosted Brief at `brief.harbr.run` through a minimal Cloudflare-to-Lambda domain adapter.
+- Show the initial agent API token once after passkey registration so it can be saved securely.
+- Added an idempotent public demo seed for validating every negotiated representation.
+
 ## 0.1.0 - 2026-07-31
 
 - Added the `@dawsson/brief` TypeScript SDK for creating and incrementally updating reports.

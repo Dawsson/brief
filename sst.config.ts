@@ -49,11 +49,12 @@ export default $config({
       },
     });
 
+    const publicUrl = $app.stage === "production" ? `${productionOrigin}/` : api.url;
     return {
-      api: api.url,
-      web: api.url,
-      admin: $interpolate`${api.url}admin/`,
-      docs: $interpolate`${api.url}docs/`,
+      api: publicUrl,
+      web: publicUrl,
+      admin: $interpolate`${publicUrl}admin/`,
+      docs: $interpolate`${publicUrl}docs/`,
     };
   },
 });

@@ -42,7 +42,7 @@ Set `BRIEF_API_URL` and `BRIEF_API_TOKEN` in the environment, or pass them expli
 const brief = await Brief.create(
   { title: "Build Report" },
   {
-    apiUrl: "https://api.example.com",
+    apiUrl: "https://brief.harbr.run",
     token: process.env.BRIEF_API_TOKEN,
   },
 );

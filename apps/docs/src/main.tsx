@@ -4,6 +4,8 @@ import { ArrowUpRight, ChevronRight } from "lucide-react";
 import { StrictMode, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 
+const homeUrl = import.meta.env.DEV ? "http://localhost:5173" : "/";
+
 function Code({ children }: { children: string }) {
   return (
     <pre className="my-7 overflow-x-auto rounded-2xl border border-neutral-800 bg-neutral-950 p-6 text-[12px] leading-6 text-neutral-300">
@@ -34,7 +36,7 @@ function App() {
     <div className="min-h-screen bg-white">
       <header className="fixed inset-x-0 top-0 z-10 border-b border-neutral-100 bg-white/95 backdrop-blur">
         <div className="mx-auto flex h-16 w-[min(1180px,calc(100%-40px))] items-center justify-between">
-          <a href="http://localhost:5173">
+          <a href={homeUrl}>
             <Logo />
           </a>
           <a
@@ -79,7 +81,7 @@ function App() {
           </div>
           <Section id="quickstart" title="Quickstart">
             <p>Install the SDK with Bun and configure your API credentials.</p>
-            <Code>{`bun add @dawsson/brief\n\nexport BRIEF_API_URL=https://api.example.com\nexport BRIEF_API_TOKEN=brief_live_...`}</Code>
+            <Code>{`bun add @dawsson/brief\n\nexport BRIEF_API_URL=https://brief.harbr.run\nexport BRIEF_API_TOKEN=brief_live_...`}</Code>
             <Code>{`import { Brief } from "@dawsson/brief"\n\nconst brief = await Brief.create({\n  title: "Deployment Report",\n  visibility: "public",\n})\n\nbrief.hero("Production is healthy", "Completed in 4m 12s")\nbrief.summary("Deployment completed successfully.")\nbrief.todo(["Warm cache", "Verify production"])\nbrief.logs(stdout)\n\nawait brief.publish()\nconsole.log(brief.url)`}</Code>
           </Section>
           <Section id="updates" title="Update in place">
@@ -136,7 +138,7 @@ function App() {
               </code>{" "}
               header does.
             </p>
-            <Code>{`curl https://api.example.com/b/brf_123 \\\n  -H 'Accept: text/markdown'\n\ncurl https://api.example.com/b/brf_123 \\\n  -H 'Accept: application/vnd.harbr.brief+json'`}</Code>
+            <Code>{`curl https://brief.harbr.run/b/brf_demo \\\n  -H 'Accept: text/markdown'\n\ncurl https://brief.harbr.run/b/brf_demo \\\n  -H 'Accept: application/vnd.harbr.brief+json'`}</Code>
             <div className="mt-7 divide-y divide-neutral-100 border-y border-neutral-100">
               {[
                 "text/html",

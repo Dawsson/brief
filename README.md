@@ -2,6 +2,8 @@
 
 Brief is a TypeScript SDK for publishing structured reports that are pleasant to read and easy for agents to update.
 
+[Open Brief](https://brief.harbr.run) · [Read the docs](https://brief.harbr.run/docs/) · [View the demo](https://brief.harbr.run/b/brf_demo) · [Install from npm](https://www.npmjs.com/package/@dawsson/brief)
+
 ```sh
 bun add @dawsson/brief
 ```
@@ -47,10 +49,10 @@ No renderer structures leak into the SDK. Every Brief, page, section, block, and
 Brief selects a representation from the HTTP `Accept` header. There are no format query parameters and no parallel documents to keep in sync.
 
 ```sh
-curl https://api.example.com/b/brf_123 -H 'Accept: text/html'
-curl https://api.example.com/b/brf_123 -H 'Accept: text/markdown'
-curl https://api.example.com/b/brf_123 -H 'Accept: text/plain'
-curl https://api.example.com/b/brf_123 -H 'Accept: application/vnd.harbr.brief+json'
+curl https://brief.harbr.run/b/brf_demo -H 'Accept: text/html'
+curl https://brief.harbr.run/b/brf_demo -H 'Accept: text/markdown'
+curl https://brief.harbr.run/b/brf_demo -H 'Accept: text/plain'
+curl https://brief.harbr.run/b/brf_demo -H 'Accept: application/vnd.harbr.brief+json'
 ```
 
 Responses include `Vary: Accept` and an ETag. Unsupported representations receive `406 Not Acceptable`.
@@ -103,17 +105,16 @@ bun run scriptc
 
 ## Deployment
 
-SST provisions the DynamoDB table, private S3 bucket, and Pier-packaged Lambda. The Lambda serves the Hono API and the built reader, admin, and docs apps from one origin, keeping passkey sessions first-party.
+SST provisions the DynamoDB table, private S3 bucket, and Pier-packaged Lambda. The Lambda serves the Hono API and the built reader, admin, and docs apps from one origin, keeping passkey sessions first-party. A small Cloudflare Worker maps `brief.harbr.run` to the Lambda Function URL.
 
-Passkeys are bound to the admin site's origin and relying-party ID. Configure both before the first production deployment:
+Deploy the AWS stack and custom-domain adapter separately:
 
 ```sh
-export BRIEF_APP_ORIGIN=https://admin.example.com
-export BRIEF_RP_ID=admin.example.com
 bun run deploy -- --stage production
+bun run deploy:edge
 ```
 
-Production resources are protected from removal and retained by default.
+Production passkeys are bound to `brief.harbr.run`. For another deployment, set `BRIEF_APP_ORIGIN` and `BRIEF_RP_ID` before running SST. Production resources are protected from removal and retained by default.
 
 ## Repository
 
@@ -123,6 +124,7 @@ apps/
   api/       Hono API and Lambda adapter
   admin/     Passkey login and administration
   docs/      SDK and HTTP documentation
+  edge/      Cloudflare custom-domain adapter
 packages/
   sdk/       Published @dawsson/brief package
   core/      Canonical model and operations

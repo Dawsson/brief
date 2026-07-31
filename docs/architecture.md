@@ -37,6 +37,8 @@ DynamoDB has no appropriate Drizzle adapter. The repository boundary therefore u
 
 The API builds to `apps/api/dist/aws/server.js`. SST's `@buildwithharbor/pier-sst` provider owns the Lambda, Function URL, resource links, and development build watcher. The built reader, admin, and docs assets are copied into the same Lambda package and served from `/`, `/admin/`, and `/docs/`. Keeping the browser apps and API on one origin preserves first-party passkey sessions without an extra proxy layer.
 
+The `apps/edge` Cloudflare Worker maps `brief.harbr.run` to the generated Function URL. It changes only the upstream hostname and preserves paths, methods, bodies, headers, status codes, and content negotiation. This narrow adapter exists because the AWS account cannot currently provision CloudFront distributions.
+
 Hono owns API routing and the AWS event adapter. The Lambda entrypoint handles only the narrow static paths before delegating all other requests to Hono.
 
 ScriptC is used for the dependency-free `brief-inspect` CLI. It is intentionally not used for the Hono Lambda: the Hono AWS adapter currently requires ScriptC's dynamic tier, so using it there would add runtime risk without improving the product boundary.
