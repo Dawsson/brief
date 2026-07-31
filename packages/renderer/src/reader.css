@@ -51,14 +51,6 @@ body {
   width: 180px;
 }
 
-.side-label {
-  margin: 0 0 22px;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 450;
-  letter-spacing: -0.012em;
-}
-
 .page-links {
   display: grid;
   gap: 1px;
@@ -540,9 +532,16 @@ hr {
 }
 
 .footer-meta {
-  display: grid;
+  display: flex;
+  align-items: center;
+  gap: 7px;
   margin: 0;
   text-align: right;
+  white-space: nowrap;
+}
+
+.footer-separator {
+  color: #b9bab5;
 }
 
 @keyframes content-enter {
@@ -568,15 +567,7 @@ hr {
   }
 
   .side nav {
-    display: flex;
-    align-items: baseline;
-    gap: 20px;
     overflow-x: auto;
-  }
-
-  .side-label {
-    flex: 0 0 auto;
-    margin: 0;
   }
 
   .page-links {
@@ -603,10 +594,6 @@ hr {
 
   .side {
     margin-bottom: 26px;
-  }
-
-  .side-label {
-    display: none;
   }
 
   .hero {

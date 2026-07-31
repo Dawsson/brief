@@ -30,11 +30,15 @@ describe("HTML renderer", () => {
     expect(rendered.body).toContain("<title>Build &lt;Report&gt; — Brief</title>");
     expect(rendered.body).toContain("Production is healthy.");
     expect(rendered.body).toContain('<span class="hljs-keyword">const</span>');
-    expect(rendered.body).toContain("On This Page");
+    expect(rendered.body).not.toContain("On This Page");
     expect(rendered.body).toContain('data-active="true"');
     expect(rendered.body).toContain("requestAnimationFrame(update)");
+    expect(rendered.body).toContain("document.documentElement.scrollHeight - 2");
+    expect(rendered.body).toContain("page.getBoundingClientRect().top + window.scrollY");
+    expect(rendered.body).toContain("link.addEventListener('click'");
     expect(rendered.body).toContain('href="https://github.com/Dawsson/brief"');
     expect(rendered.body).toContain("Updated ");
+    expect(rendered.body).toContain('class="footer-separator" aria-hidden="true">•</span>');
     expect(rendered.body).not.toContain('class="wordmark"');
     expect(rendered.body).not.toContain('class="meta"');
     expect(rendered.body).not.toContain("ui-serif");

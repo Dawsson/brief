@@ -42,14 +42,7 @@ const activePageScript = `
   const pages = Array.from(document.querySelectorAll('[data-brief-page]'));
   let frame = 0;
 
-  const update = () => {
-    frame = 0;
-    const marker = window.scrollY + Math.min(window.innerHeight * 0.28, 240);
-    let current = pages[0];
-    for (const page of pages) {
-      if (page.offsetTop <= marker) current = page;
-    }
-    const target = current ? '#' + current.id : '';
+  const setActive = (target) => {
     for (const link of links) {
       const active = link.getAttribute('href') === target;
       link.dataset.active = String(active);
@@ -58,12 +51,34 @@ const activePageScript = `
     }
   };
 
+  const update = () => {
+    frame = 0;
+    const atBottom =
+      window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+    if (atBottom) {
+      const lastPage = pages[pages.length - 1];
+      setActive(lastPage ? '#' + lastPage.id : '');
+      return;
+    }
+
+    const marker = window.scrollY + Math.min(window.innerHeight * 0.28, 240);
+    let current = pages[0];
+    for (const page of pages) {
+      const pageTop = page.getBoundingClientRect().top + window.scrollY;
+      if (pageTop <= marker) current = page;
+    }
+    setActive(current ? '#' + current.id : '');
+  };
+
   const schedule = () => {
     if (!frame) frame = requestAnimationFrame(update);
   };
 
   addEventListener('scroll', schedule, { passive: true });
   addEventListener('resize', schedule);
+  for (const link of links) {
+    link.addEventListener('click', () => setActive(link.getAttribute('href') || ''));
+  }
   update();
 })();
 `;
@@ -209,7 +224,6 @@ function Sidebar({ pages }: { pages: BriefPage[] }) {
   return (
     <aside class="side">
       <nav aria-label="Brief pages">
-        <p class="side-label">On This Page</p>
         <div class="page-links">
           {pages.map((page, index) => (
             <a
@@ -241,6 +255,9 @@ function Footer({ document }: { document: BriefDocument }) {
       </a>
       <p class="footer-meta">
         <span>Updated {updated}</span>
+        <span class="footer-separator" aria-hidden="true">
+          •
+        </span>
         <span>Version {document.version}</span>
       </p>
     </footer>
