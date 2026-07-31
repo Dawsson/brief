@@ -24,6 +24,8 @@ await brief.publish();
 console.log(brief.url);
 ```
 
+Published Briefs use a stable, opaque eight-digit public ID.
+
 `Brief.create` builds local document state. `publish` persists it. Every object receives a stable ID so later updates can be expressed as focused operations:
 
 ```ts

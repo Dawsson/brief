@@ -2,9 +2,13 @@
 
 ## Unreleased
 
+## 0.1.1 - 2026-07-31
+
 - Hosted Brief at `brief.harbr.run` through a minimal Cloudflare-to-Lambda domain adapter.
 - Show the initial agent API token once after passkey registration so it can be saved securely.
 - Added an idempotent public demo seed for validating every negotiated representation.
+- Refined the reader with Inter typography, a quieter page rail, and server-rendered syntax highlighting.
+- Changed generated Brief URLs and page anchors to opaque eight-digit IDs.
 
 ## 0.1.0 - 2026-07-31
 
