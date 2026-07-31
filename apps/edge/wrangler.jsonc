@@ -1,0 +1,16 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "brief-edge",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-31",
+  "account_id": "6689e70db2aaff6670c28b7e4d36df02",
+  "routes": [
+    {
+      "pattern": "brief.harbr.run/*",
+      "zone_name": "harbr.run",
+    },
+  ],
+  "observability": {
+    "enabled": true,
+  },
+}

@@ -17,7 +17,7 @@ export default $config({
     };
   },
   async run() {
-    const productionOrigin = "https://n3juzrpd275natuxedlcxg7gx40bvqjr.lambda-url.us-east-1.on.aws";
+    const productionOrigin = "https://brief.harbr.run";
     const appOrigin =
       process.env.BRIEF_APP_ORIGIN ??
       ($app.stage === "production" ? productionOrigin : "http://localhost:5174");
