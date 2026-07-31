@@ -29,16 +29,16 @@ The SDK owns agent ergonomics. `packages/core` owns ids, state, and operation se
 
 ## Persistence
 
-Production uses a single DynamoDB table with `pk` and `sk` keys. Briefs, users, credentials, invites, authentication flows, and sessions are separate entities. S3 objects are private and served through immutable API asset URLs; uploads use short-lived signed PUT URLs.
+Every running API stage uses its own DynamoDB table with `pk` and `sk` keys. Briefs, users, credentials, invites, authentication flows, and sessions are separate entities. S3 objects are private; uploads use short-lived signed PUT URLs and reads redirect through short-lived signed GET URLs. SST links both resources into the API as `Resource.Database` and `Resource.Storage`. Tests replace those adapters with in-memory implementations.
 
 DynamoDB has no appropriate Drizzle adapter. The repository boundary therefore uses the AWS SDK directly rather than introducing an ORM that cannot model the datastore faithfully.
 
 ## Lambda packaging
 
-The API builds to `apps/api/dist/aws/server.js`. SST's `@buildwithharbor/pier-sst` provider owns the Lambda, Function URL, resource links, and development build watcher. The built reader, admin, and docs assets are copied into the same Lambda package and served from `/`, `/admin/`, and `/docs/`. Keeping the browser apps and API on one origin preserves first-party passkey sessions without an extra proxy layer.
+The Pier Vite plugin discovers `*.endpoints.ts` modules and ordered middleware, generates the API contract and OpenAPI document, and builds `apps/api/dist/aws/server.mjs`. SST's `@buildwithharbor/pier-sst` provider owns the Lambda, Function URL, resource links, and development build watcher. The built reader, admin, and docs assets are copied into the same Lambda package and served from `/`, `/admin/`, and `/docs/`. Keeping the browser apps and API on one origin preserves first-party passkey sessions without an extra proxy layer.
 
 The `apps/edge` Cloudflare Worker maps `brief.harbr.run` to the generated Function URL. It changes only the upstream hostname and preserves paths, methods, bodies, headers, status codes, and content negotiation. This narrow adapter exists because the AWS account cannot currently provision CloudFront distributions.
 
-Hono owns API routing and the AWS event adapter. The Lambda entrypoint handles only the narrow static paths before delegating all other requests to Hono.
+Pier owns API routing, middleware, response validation, OpenAPI generation, and the AWS Function URL adapter. Application code owns authentication and the DynamoDB/S3 adapters. `env.ts` declares application configuration; infrastructure identity always comes from linked SST resources.
 
-ScriptC is used for the dependency-free `brief-inspect` CLI. It is intentionally not used for the Hono Lambda: the Hono AWS adapter currently requires ScriptC's dynamic tier, so using it there would add runtime risk without improving the product boundary.
+ScriptC is used only for the dependency-free `brief-inspect` CLI.

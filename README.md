@@ -69,7 +69,7 @@ Brief v1 deliberately has a small surface:
 - Agent tokens for SDK access
 - A focused admin for users, invites, Briefs, and storage
 
-The production stack is Hono on AWS Lambda, DynamoDB, private S3 storage, and SST with Pier. The browser apps use React, Tailwind CSS, and shadcn-style primitives. Everything is TypeScript except the dependency-free ScriptC inspector.
+The production stack is Pier on AWS Lambda, DynamoDB, private S3 storage, and SST. The browser apps use React, Tailwind CSS, and shadcn-style primitives. Everything is TypeScript except the dependency-free ScriptC inspector.
 
 ## Development
 
@@ -87,7 +87,13 @@ bun dev
 | Docs    | `http://localhost:5175` |
 | API     | `http://localhost:4000` |
 
-Local development uses in-memory persistence and asset storage. The first registration for `hello@dawson.gg` creates the initial admin; all later accounts require an invite.
+`bun dev` runs the API through `sst dev`, so it uses a real DynamoDB table and S3 bucket isolated to your personal SST stage. SST links those resources into the Pier runtime as `Resource.Database` and `Resource.Storage`; no local database emulator or resource-name environment variables are used. Unit tests use injected in-memory repositories and storage. The first registration for `hello@dawson.gg` creates the initial admin; all later accounts require an invite.
+
+Seed the public demo into the current SST stage with:
+
+```sh
+vp run @brief/api#seed:demo
+```
 
 Agent credentials use a one-time device flow. Registration creates only the human passkey account;
 it never displays an API token. Run the CLI, approve the matching code in the browser, and let Brief
@@ -113,7 +119,7 @@ bun run scriptc
 
 ## Deployment
 
-SST provisions the DynamoDB table, private S3 bucket, and Pier-packaged Lambda. The Lambda serves the Hono API and the built reader, admin, and docs apps from one origin, keeping passkey sessions first-party. A small Cloudflare Worker maps `brief.harbr.run` to the Lambda Function URL.
+SST provisions the DynamoDB table, private S3 bucket, and Pier-generated Lambda. The Lambda serves the Pier API and the built reader, admin, and docs apps from one origin, keeping passkey sessions first-party. A small Cloudflare Worker maps `brief.harbr.run` to the Lambda Function URL.
 
 Deploy the AWS stack and custom-domain adapter separately:
 
@@ -129,7 +135,7 @@ Production passkeys are bound to `brief.harbr.run`. For another deployment, set 
 ```text
 apps/
   web/       Public product and Brief reader
-  api/       Hono API and Lambda adapter
+  api/       Pier procedures and runtime services
   admin/     Passkey login and administration
   docs/      SDK and HTTP documentation
   edge/      Cloudflare custom-domain adapter
