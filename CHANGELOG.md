@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Migrated the API fully to source-driven Pier procedures and middleware with SST-linked DynamoDB
+  and S3 resources in every running stage.
+- Split passkeys, registration policy, sessions, API keys, principal resolution, and CLI device
+  authorization into focused auth services.
+- Added server-side browser-session and CLI-token revocation, including sign-out controls in the
+  admin and CLI.
+- Added DynamoDB TTL metadata for expiring auth records and complete pagination for DynamoDB and
+  S3 administrative reads.
+- Removed the legacy API token stored on user records.
+
 ## 0.1.2 - 2026-07-31
 
 - Added `brief login`, a browser-approved device flow that saves agent credentials privately and loads them automatically in the SDK.
