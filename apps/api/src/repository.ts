@@ -1,6 +1,8 @@
 import type { BriefDocument } from "@brief/core";
 import type {
+  ApiTokenRecord,
   CredentialRecord,
+  DeviceAuthorizationRecord,
   FlowRecord,
   InviteRecord,
   SessionRecord,
@@ -8,14 +10,21 @@ import type {
 } from "./model";
 
 export interface Repository {
+  consumeDeviceAuthorization(
+    hash: string,
+    consumedAt: string,
+  ): Promise<DeviceAuthorizationRecord | undefined>;
   countUsers(): Promise<number>;
   createInvite(invite: InviteRecord): Promise<void>;
   deleteBrief(id: string): Promise<void>;
   deleteFlow(id: string): Promise<void>;
   findUserByApiTokenHash(hash: string): Promise<UserRecord | undefined>;
+  findDeviceAuthorizationByUserCode(code: string): Promise<DeviceAuthorizationRecord | undefined>;
   findUserByEmail(email: string): Promise<UserRecord | undefined>;
   getBrief(id: string): Promise<BriefDocument | undefined>;
+  getApiToken(hash: string): Promise<ApiTokenRecord | undefined>;
   getCredential(id: string): Promise<CredentialRecord | undefined>;
+  getDeviceAuthorizationByHash(hash: string): Promise<DeviceAuthorizationRecord | undefined>;
   getFlow(id: string): Promise<FlowRecord | undefined>;
   getInviteByHash(hash: string): Promise<InviteRecord | undefined>;
   getSession(hash: string): Promise<SessionRecord | undefined>;
@@ -25,7 +34,9 @@ export interface Repository {
   listInvites(): Promise<InviteRecord[]>;
   listUsers(): Promise<UserRecord[]>;
   putBrief(document: BriefDocument): Promise<void>;
+  putApiToken(token: ApiTokenRecord): Promise<void>;
   putCredential(credential: CredentialRecord): Promise<void>;
+  putDeviceAuthorization(authorization: DeviceAuthorizationRecord): Promise<void>;
   putFlow(flow: FlowRecord): Promise<void>;
   putSession(session: SessionRecord): Promise<void>;
   putUser(user: UserRecord): Promise<void>;
@@ -34,13 +45,28 @@ export interface Repository {
 }
 
 export class MemoryRepository implements Repository {
+  private readonly apiTokens = new Map<string, ApiTokenRecord>();
   private readonly briefs = new Map<string, BriefDocument>();
   private readonly credentials = new Map<string, CredentialRecord>();
+  private readonly deviceAuthorizations = new Map<string, DeviceAuthorizationRecord>();
   private readonly flows = new Map<string, FlowRecord>();
   private readonly invites = new Map<string, InviteRecord>();
   private readonly sessions = new Map<string, SessionRecord>();
   private readonly users = new Map<string, UserRecord>();
 
+  async consumeDeviceAuthorization(hash: string, consumedAt: string) {
+    const authorization = this.deviceAuthorizations.get(hash);
+    if (
+      !authorization ||
+      authorization.status !== "approved" ||
+      authorization.expiresAt <= consumedAt
+    ) {
+      return undefined;
+    }
+    authorization.status = "consumed";
+    authorization.consumedAt = consumedAt;
+    return structuredClone(authorization);
+  }
   async countUsers() {
     return this.users.size;
   }
@@ -56,14 +82,27 @@ export class MemoryRepository implements Repository {
   async findUserByApiTokenHash(hash: string) {
     return [...this.users.values()].find((user) => user.apiTokenHash === hash);
   }
+  async findDeviceAuthorizationByUserCode(code: string) {
+    return structuredClone(
+      [...this.deviceAuthorizations.values()].find(
+        (authorization) => authorization.userCode === code,
+      ),
+    );
+  }
   async findUserByEmail(email: string) {
     return [...this.users.values()].find((user) => user.email === email);
   }
   async getBrief(id: string) {
     return structuredClone(this.briefs.get(id));
   }
+  async getApiToken(hash: string) {
+    return structuredClone(this.apiTokens.get(hash));
+  }
   async getCredential(id: string) {
     return structuredClone(this.credentials.get(id));
+  }
+  async getDeviceAuthorizationByHash(hash: string) {
+    return structuredClone(this.deviceAuthorizations.get(hash));
   }
   async getFlow(id: string) {
     return structuredClone(this.flows.get(id));
@@ -96,8 +135,14 @@ export class MemoryRepository implements Repository {
   async putBrief(document: BriefDocument) {
     this.briefs.set(document.id, structuredClone(document));
   }
+  async putApiToken(token: ApiTokenRecord) {
+    this.apiTokens.set(token.idHash, structuredClone(token));
+  }
   async putCredential(credential: CredentialRecord) {
     this.credentials.set(credential.credentialId, structuredClone(credential));
+  }
+  async putDeviceAuthorization(authorization: DeviceAuthorizationRecord) {
+    this.deviceAuthorizations.set(authorization.deviceCodeHash, structuredClone(authorization));
   }
   async putFlow(flow: FlowRecord) {
     this.flows.set(flow.id, structuredClone(flow));

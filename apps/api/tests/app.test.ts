@@ -1,6 +1,7 @@
 import { createDocument } from "@brief/core";
 import { describe, expect, test } from "vite-plus/test";
 import { createApp } from "../src/app";
+import { hashToken } from "../src/crypto";
 import { MemoryRepository } from "../src/repository";
 
 describe("public Brief route", () => {
@@ -50,5 +51,69 @@ describe("browser API access", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("access-control-allow-origin")).toBeNull();
+  });
+});
+
+describe("CLI device authorization", () => {
+  test("delivers an agent token only after signed-in approval", async () => {
+    const repository = new MemoryRepository();
+    const legacyToken = "brief_live_existing";
+    const user = {
+      id: "usr_admin",
+      email: "hello@dawson.gg",
+      role: "admin" as const,
+      createdAt: new Date().toISOString(),
+      apiTokenHash: await hashToken(legacyToken),
+    };
+    await repository.putUser(user);
+    const app = createApp({ repository });
+
+    const started = await app.request("/v1/auth/device/code", { method: "POST" });
+    expect(started.status).toBe(201);
+    const authorization = (await started.json()) as {
+      data: { deviceCode: string; userCode: string; verificationUri: string };
+    };
+    expect(authorization.data.verificationUri).toContain(
+      `/admin/?device=${authorization.data.userCode}`,
+    );
+    expect(JSON.stringify(authorization)).not.toContain("brief_live_");
+
+    const pending = await app.request("/v1/auth/device/token", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ deviceCode: authorization.data.deviceCode }),
+    });
+    expect(pending.status).toBe(202);
+
+    const approved = await app.request(
+      `/v1/auth/device/${encodeURIComponent(authorization.data.userCode)}/approve`,
+      {
+        method: "POST",
+        headers: { authorization: `Bearer ${legacyToken}` },
+      },
+    );
+    expect(approved.status).toBe(200);
+    expect(await approved.text()).not.toContain("brief_live_");
+
+    const exchanged = await app.request("/v1/auth/device/token", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ deviceCode: authorization.data.deviceCode }),
+    });
+    expect(exchanged.status).toBe(200);
+    const credentials = (await exchanged.json()) as { data: { token: string } };
+    expect(credentials.data.token).toMatch(/^brief_live_/);
+
+    const authorized = await app.request("/v1/briefs", {
+      headers: { authorization: `Bearer ${credentials.data.token}` },
+    });
+    expect(authorized.status).toBe(200);
+
+    const replay = await app.request("/v1/auth/device/token", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ deviceCode: authorization.data.deviceCode }),
+    });
+    expect(replay.status).toBe(409);
   });
 });

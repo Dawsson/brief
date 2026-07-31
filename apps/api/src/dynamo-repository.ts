@@ -5,10 +5,13 @@ import {
   GetCommand,
   PutCommand,
   ScanCommand,
+  UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
 import type { BriefDocument } from "@brief/core";
 import type {
+  ApiTokenRecord,
   CredentialRecord,
+  DeviceAuthorizationRecord,
   FlowRecord,
   InviteRecord,
   SessionRecord,
@@ -56,6 +59,31 @@ export class DynamoRepository implements Repository {
     return (response.Items ?? []).map((item) => item.data as T);
   }
 
+  async consumeDeviceAuthorization(hash: string, consumedAt: string) {
+    try {
+      const response = await this.client.send(
+        new UpdateCommand({
+          TableName: this.tableName,
+          Key: { pk: `DEVICE#${hash}`, sk: "META" },
+          UpdateExpression: "SET #data.#status = :consumed, #data.consumedAt = :consumedAt",
+          ConditionExpression: "#data.#status = :approved AND #data.expiresAt > :consumedAt",
+          ExpressionAttributeNames: { "#data": "data", "#status": "status" },
+          ExpressionAttributeValues: {
+            ":approved": "approved",
+            ":consumed": "consumed",
+            ":consumedAt": consumedAt,
+          },
+          ReturnValues: "ALL_NEW",
+        }),
+      );
+      return response.Attributes?.data as DeviceAuthorizationRecord | undefined;
+    } catch (cause) {
+      if (cause instanceof Error && cause.name === "ConditionalCheckFailedException") {
+        return undefined;
+      }
+      throw cause;
+    }
+  }
   async countUsers() {
     return (await this.listUsers()).length;
   }
@@ -75,14 +103,25 @@ export class DynamoRepository implements Repository {
   async findUserByApiTokenHash(hash: string) {
     return (await this.listUsers()).find((user) => user.apiTokenHash === hash);
   }
+  async findDeviceAuthorizationByUserCode(code: string) {
+    return (await this.scan<DeviceAuthorizationRecord>("device_authorization")).find(
+      (authorization) => authorization.userCode === code,
+    );
+  }
   async findUserByEmail(email: string) {
     return (await this.listUsers()).find((user) => user.email === email);
   }
   async getBrief(id: string) {
     return this.get<BriefDocument>(`BRIEF#${id}`, "META");
   }
+  async getApiToken(hash: string) {
+    return this.get<ApiTokenRecord>(`API_TOKEN#${hash}`, "META");
+  }
   async getCredential(id: string) {
     return this.get<CredentialRecord>(`CREDENTIAL#${id}`, "META");
+  }
+  async getDeviceAuthorizationByHash(hash: string) {
+    return this.get<DeviceAuthorizationRecord>(`DEVICE#${hash}`, "META");
   }
   async getFlow(id: string) {
     return this.get<FlowRecord>(`FLOW#${id}`, "META");
@@ -115,8 +154,19 @@ export class DynamoRepository implements Repository {
   async putBrief(document: BriefDocument) {
     await this.put("brief", `BRIEF#${document.id}`, "META", document);
   }
+  async putApiToken(token: ApiTokenRecord) {
+    await this.put("api_token", `API_TOKEN#${token.idHash}`, "META", token);
+  }
   async putCredential(credential: CredentialRecord) {
     await this.put("credential", `CREDENTIAL#${credential.credentialId}`, "META", credential);
+  }
+  async putDeviceAuthorization(authorization: DeviceAuthorizationRecord) {
+    await this.put(
+      "device_authorization",
+      `DEVICE#${authorization.deviceCodeHash}`,
+      "META",
+      authorization,
+    );
   }
   async putFlow(flow: FlowRecord) {
     await this.put("flow", `FLOW#${flow.id}`, "META", flow);

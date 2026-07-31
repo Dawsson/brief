@@ -28,6 +28,7 @@ export interface CreateAppOptions {
 const registerInput = z.object({ email: z.email(), inviteToken: z.string().nullable().optional() });
 const flowInput = z.object({ flowId: z.string().min(1), response: z.unknown() });
 const authenticateInput = z.object({ email: z.email() });
+const deviceTokenInput = z.object({ deviceCode: z.string().min(1) });
 const inviteInput = z.object({ email: z.email(), role: z.enum(["admin", "user"]).default("user") });
 const uploadInput = z.object({
   filename: z.string().min(1).max(200),
@@ -127,7 +128,7 @@ export function createApp(options: CreateAppOptions = {}) {
       input.response as RegistrationResponseJSON,
     );
     await auth.createSession(context, result.user);
-    return context.json({ data: result.user, apiToken: result.apiToken }, 201);
+    return context.json({ data: result.user }, 201);
   });
   app.post("/v1/auth/authenticate/options", async (context) => {
     const input = authenticateInput.parse(await context.req.json());
@@ -141,6 +142,81 @@ export function createApp(options: CreateAppOptions = {}) {
     );
     await auth.createSession(context, user);
     return context.json({ data: user });
+  });
+  app.get("/v1/auth/session", requireUser, (context) => {
+    const { apiTokenHash: _, ...user } = context.get("user");
+    return context.json({ data: user });
+  });
+
+  app.post("/v1/auth/device/code", async (context) => {
+    return context.json({ data: await auth.createDeviceAuthorization() }, 201);
+  });
+  app.post("/v1/auth/device/token", async (context) => {
+    const { deviceCode } = deviceTokenInput.parse(await context.req.json());
+    const result = await auth.exchangeDeviceCode(deviceCode);
+    if (result.status === "pending") {
+      return context.json(
+        { data: { status: result.status, interval: result.intervalSeconds } },
+        202,
+      );
+    }
+    if (result.status === "denied") {
+      return error(context, 403, "access_denied", "Device authorization was denied");
+    }
+    if (result.status === "consumed") {
+      return error(context, 409, "device_code_consumed", "This device code was already used");
+    }
+    if (result.status === "expired") {
+      return error(context, 410, "device_code_expired", "This device code is invalid or expired");
+    }
+    const { apiTokenHash: _, ...user } = result.user;
+    return context.json({
+      data: { token: result.token, tokenType: "Bearer", user },
+    });
+  });
+  app.get("/v1/auth/device/:userCode", requireUser, async (context) => {
+    const authorization = await auth.getDeviceAuthorization(context.req.param("userCode") ?? "");
+    if (!authorization) return error(context, 404, "not_found", "Device code not found");
+    if (authorization.expiresAt <= new Date().toISOString()) {
+      return error(context, 410, "device_code_expired", "This device code has expired");
+    }
+    return context.json({
+      data: {
+        expiresAt: authorization.expiresAt,
+        status: authorization.status,
+        userCode: authorization.userCode,
+      },
+    });
+  });
+  app.post("/v1/auth/device/:userCode/approve", requireUser, async (context) => {
+    const authorization = await auth.decideDeviceAuthorization(
+      context.req.param("userCode") ?? "",
+      context.get("user"),
+      "approve",
+    );
+    if (!authorization) return error(context, 404, "not_found", "Device code not found");
+    if (authorization.expiresAt <= new Date().toISOString()) {
+      return error(context, 410, "device_code_expired", "This device code has expired");
+    }
+    if (authorization.status !== "approved") {
+      return error(context, 409, "device_code_unavailable", "This device code is no longer active");
+    }
+    return context.json({ data: { status: authorization.status } });
+  });
+  app.post("/v1/auth/device/:userCode/deny", requireUser, async (context) => {
+    const authorization = await auth.decideDeviceAuthorization(
+      context.req.param("userCode") ?? "",
+      context.get("user"),
+      "deny",
+    );
+    if (!authorization) return error(context, 404, "not_found", "Device code not found");
+    if (authorization.expiresAt <= new Date().toISOString()) {
+      return error(context, 410, "device_code_expired", "This device code has expired");
+    }
+    if (authorization.status !== "denied") {
+      return error(context, 409, "device_code_unavailable", "This device code is no longer active");
+    }
+    return context.json({ data: { status: authorization.status } });
   });
 
   app.get("/b/:id", async (context) => servePublicBrief(context, repository));

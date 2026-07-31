@@ -8,8 +8,8 @@ import {
 } from "@simplewebauthn/server";
 import type { Context } from "hono";
 import { getCookie, setCookie } from "hono/cookie";
-import { base64ToBytes, bytesToBase64, hashToken, randomToken } from "./crypto";
-import type { FlowRecord, UserRecord, UserRole } from "./model";
+import { base64ToBytes, bytesToBase64, hashToken, randomToken, randomUserCode } from "./crypto";
+import type { DeviceAuthorizationRecord, FlowRecord, UserRecord, UserRole } from "./model";
 import type { Repository } from "./repository";
 
 const SESSION_COOKIE = "brief_session";
@@ -25,6 +25,13 @@ interface RegistrationInput {
   email: string;
   inviteToken?: string | null | undefined;
 }
+
+export type DeviceTokenResult =
+  | { intervalSeconds: number; status: "pending" }
+  | { status: "approved"; token: string; user: UserRecord }
+  | { status: "consumed" }
+  | { status: "denied" }
+  | { status: "expired" };
 
 function expiresIn(minutes: number): string {
   return new Date(Date.now() + minutes * 60_000).toISOString();
@@ -100,13 +107,11 @@ export class AuthService {
     if (!verification.verified) throw new Error("Passkey verification failed");
     const now = new Date().toISOString();
     const userId = `usr_${crypto.randomUUID().replaceAll("-", "")}`;
-    const apiToken = randomToken("brief_live");
     const user: UserRecord = {
       id: userId,
       email: flow.email,
       role: flow.role,
       createdAt: now,
-      apiTokenHash: await hashToken(apiToken),
     };
     const credential = verification.registrationInfo.credential;
     await this.repository.putUser(user);
@@ -119,7 +124,7 @@ export class AuthService {
     });
     if (flow.inviteId) await this.repository.useInvite(flow.inviteId, now);
     await this.repository.deleteFlow(flow.id);
-    return { user, apiToken };
+    return { user };
   }
 
   async authenticationOptions(emailInput: string) {
@@ -192,10 +197,94 @@ export class AuthService {
     });
   }
 
+  async createDeviceAuthorization() {
+    let userCode = randomUserCode();
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      if (!(await this.repository.findDeviceAuthorizationByUserCode(userCode))) break;
+      userCode = randomUserCode();
+    }
+    if (await this.repository.findDeviceAuthorizationByUserCode(userCode)) {
+      throw new Error("Could not create a unique device code. Try again.");
+    }
+
+    const deviceCode = randomToken("device");
+    const now = new Date();
+    const intervalSeconds = 2;
+    const authorization: DeviceAuthorizationRecord = {
+      id: `dvc_${crypto.randomUUID().replaceAll("-", "")}`,
+      createdAt: now.toISOString(),
+      deviceCodeHash: await hashToken(deviceCode),
+      expiresAt: new Date(now.getTime() + 10 * 60_000).toISOString(),
+      intervalSeconds,
+      status: "pending",
+      userCode,
+    };
+    await this.repository.putDeviceAuthorization(authorization);
+    return {
+      deviceCode,
+      userCode,
+      verificationUri: `${this.configuration.origin}/admin/?device=${encodeURIComponent(userCode)}`,
+      expiresIn: 600,
+      interval: intervalSeconds,
+    };
+  }
+
+  async getDeviceAuthorization(userCode: string): Promise<DeviceAuthorizationRecord | undefined> {
+    return this.repository.findDeviceAuthorizationByUserCode(normalizeUserCode(userCode));
+  }
+
+  async decideDeviceAuthorization(
+    userCode: string,
+    user: UserRecord,
+    decision: "approve" | "deny",
+  ): Promise<DeviceAuthorizationRecord | undefined> {
+    const authorization = await this.getDeviceAuthorization(userCode);
+    const now = new Date().toISOString();
+    if (!authorization || authorization.expiresAt <= now || authorization.status !== "pending") {
+      return authorization;
+    }
+    const updated: DeviceAuthorizationRecord = {
+      ...authorization,
+      status: decision === "approve" ? "approved" : "denied",
+      ...(decision === "approve"
+        ? { approvedAt: now, userId: user.id }
+        : { deniedAt: now, userId: user.id }),
+    };
+    await this.repository.putDeviceAuthorization(updated);
+    return updated;
+  }
+
+  async exchangeDeviceCode(deviceCode: string): Promise<DeviceTokenResult> {
+    const hash = await hashToken(deviceCode);
+    const authorization = await this.repository.getDeviceAuthorizationByHash(hash);
+    const now = new Date().toISOString();
+    if (!authorization || authorization.expiresAt <= now) return { status: "expired" };
+    if (authorization.status === "pending") {
+      return { status: "pending", intervalSeconds: authorization.intervalSeconds };
+    }
+    if (authorization.status === "denied") return { status: "denied" };
+    if (authorization.status === "consumed") return { status: "consumed" };
+
+    const consumed = await this.repository.consumeDeviceAuthorization(hash, now);
+    if (!consumed?.userId) return { status: "consumed" };
+    const user = await this.repository.getUser(consumed.userId);
+    if (!user) return { status: "expired" };
+    const token = randomToken("brief_live");
+    await this.repository.putApiToken({
+      idHash: await hashToken(token),
+      userId: user.id,
+      createdAt: now,
+    });
+    return { status: "approved", token, user };
+  }
+
   async resolveUser(context: Context): Promise<UserRecord | undefined> {
     const authorization = context.req.header("authorization");
     if (authorization?.startsWith("Bearer ")) {
-      return this.repository.findUserByApiTokenHash(await hashToken(authorization.slice(7)));
+      const tokenHash = await hashToken(authorization.slice(7));
+      const token = await this.repository.getApiToken(tokenHash);
+      if (token) return this.repository.getUser(token.userId);
+      return this.repository.findUserByApiTokenHash(tokenHash);
     }
     const sessionToken = getCookie(context, SESSION_COOKIE);
     if (!sessionToken) return undefined;
@@ -211,4 +300,12 @@ export class AuthService {
     }
     return flow;
   }
+}
+
+function normalizeUserCode(value: string): string {
+  const compact = value
+    .trim()
+    .toUpperCase()
+    .replaceAll(/[^A-Z0-9]/g, "");
+  return compact.length === 8 ? `${compact.slice(0, 4)}-${compact.slice(4)}` : value;
 }

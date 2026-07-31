@@ -3,6 +3,13 @@ export function randomToken(prefix: string): string {
   return `${prefix}_${Buffer.from(bytes).toString("base64url")}`;
 }
 
+export function randomUserCode(): string {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const bytes = crypto.getRandomValues(new Uint8Array(8));
+  const code = [...bytes].map((byte) => alphabet[byte & 31]).join("");
+  return `${code.slice(0, 4)}-${code.slice(4)}`;
+}
+
 export async function hashToken(value: string): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
   return Buffer.from(digest).toString("base64url");

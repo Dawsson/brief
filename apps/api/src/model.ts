@@ -3,11 +3,18 @@ import type { AuthenticatorTransportFuture, Base64URLString } from "@simplewebau
 export type UserRole = "admin" | "user";
 
 export interface UserRecord {
+  /** @deprecated Legacy single-token storage. New tokens use ApiTokenRecord. */
   apiTokenHash?: string;
   createdAt: string;
   email: string;
   id: string;
   role: UserRole;
+}
+
+export interface ApiTokenRecord {
+  createdAt: string;
+  idHash: string;
+  userId: string;
 }
 
 export interface CredentialRecord {
@@ -44,4 +51,18 @@ export interface SessionRecord {
   expiresAt: string;
   idHash: string;
   userId: string;
+}
+
+export interface DeviceAuthorizationRecord {
+  approvedAt?: string;
+  consumedAt?: string;
+  createdAt: string;
+  deniedAt?: string;
+  deviceCodeHash: string;
+  expiresAt: string;
+  id: string;
+  intervalSeconds: number;
+  status: "approved" | "consumed" | "denied" | "pending";
+  userCode: string;
+  userId?: string;
 }
