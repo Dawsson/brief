@@ -32,7 +32,7 @@ function ProductPreview() {
         <span className="size-2 rounded-full bg-neutral-200" />
         <span className="size-2 rounded-full bg-neutral-200" />
         <span className="mx-auto -translate-x-5 text-[10px] font-medium text-neutral-400">
-          brief.sh/b/deploy_42
+          brief.harbr.run/b/16230282
         </span>
       </div>
       <div className="grid min-h-[430px] grid-cols-[130px_1fr] sm:grid-cols-[170px_1fr]">

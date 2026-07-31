@@ -1,7 +1,22 @@
 import { describe, expect, test } from "vite-plus/test";
-import { appendBlock, applyOperations, createDocument, createId } from "../src";
+import {
+  appendBlock,
+  applyOperations,
+  createBriefId,
+  createDocument,
+  createId,
+  createPageSlug,
+} from "../src";
 
 describe("operations", () => {
+  test("creates opaque eight-digit page slugs", () => {
+    expect(createBriefId()).toMatch(/^\d{8}$/);
+    expect(createPageSlug()).toMatch(/^\d{8}$/);
+    const document = createDocument({ title: "Deployment Overview" });
+    expect(document.id).toMatch(/^\d{8}$/);
+    expect(document.pages[0]?.slug).toMatch(/^\d{8}$/);
+  });
+
   test("applies append and check without mutating the source", () => {
     const document = createDocument({ title: "Deploy" });
     const logsId = createId("blk");

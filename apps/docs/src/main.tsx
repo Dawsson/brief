@@ -138,7 +138,7 @@ function App() {
               </code>{" "}
               header does.
             </p>
-            <Code>{`curl https://brief.harbr.run/b/brf_demo \\\n  -H 'Accept: text/markdown'\n\ncurl https://brief.harbr.run/b/brf_demo \\\n  -H 'Accept: application/vnd.harbr.brief+json'`}</Code>
+            <Code>{`curl https://brief.harbr.run/b/16230282 \\\n  -H 'Accept: text/markdown'\n\ncurl https://brief.harbr.run/b/16230282 \\\n  -H 'Accept: application/vnd.harbr.brief+json'`}</Code>
             <div className="mt-7 divide-y divide-neutral-100 border-y border-neutral-100">
               {[
                 "text/html",

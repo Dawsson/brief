@@ -5,7 +5,7 @@ const timestamp = "2026-07-31T00:00:00.000Z";
 
 const demo: BriefDocument = {
   schemaVersion: 1,
-  id: "brf_demo",
+  id: "16230282",
   ownerId: "system",
   title: "Production Deployment",
   description: "A public Brief rendered from canonical document state.",
@@ -17,7 +17,7 @@ const demo: BriefDocument = {
     {
       id: "pag_demo_overview",
       title: "Overview",
-      slug: "overview",
+      slug: "48271930",
       sections: [
         {
           id: "sec_demo_summary",
@@ -44,6 +44,13 @@ const demo: BriefDocument = {
               trend: "up",
             },
             {
+              id: "blk_demo_code",
+              type: "code",
+              filename: "deploy.ts",
+              language: "typescript",
+              code: 'const brief = await Brief.open("16230282");\nbrief.logs.append("Deployment verified.");\nawait brief.commit();',
+            },
+            {
               id: "blk_demo_checklist",
               type: "checklist",
               items: [
@@ -59,7 +66,7 @@ const demo: BriefDocument = {
     {
       id: "pag_demo_logs",
       title: "Logs",
-      slug: "logs",
+      slug: "93016482",
       sections: [
         {
           id: "sec_demo_logs",
@@ -92,4 +99,4 @@ function databaseName(): string {
 
 const repository = new DynamoRepository(databaseName());
 await repository.putBrief(demo);
-console.log("Seeded https://brief.harbr.run/b/brf_demo");
+console.log("Seeded https://brief.harbr.run/b/16230282");

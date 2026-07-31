@@ -11,6 +11,12 @@ describe("HTML renderer", () => {
       title: "Production is healthy.",
       subtitle: "Every service is responding normally.",
     });
+    appendBlock(document, {
+      id: "blk_code",
+      type: "code",
+      language: "typescript",
+      code: 'const status: string = "healthy";',
+    });
 
     const rendered = renderBrief(document, "text/html");
 
@@ -18,6 +24,7 @@ describe("HTML renderer", () => {
     expect(rendered.body).toContain("font-family:InterVariable,Inter");
     expect(rendered.body).toContain("<title>Build &lt;Report&gt; — Brief</title>");
     expect(rendered.body).toContain("Production is healthy.");
+    expect(rendered.body).toContain('<span class="hljs-keyword">const</span>');
     expect(rendered.body).not.toContain("ui-serif");
   });
 });

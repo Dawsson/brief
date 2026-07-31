@@ -2,7 +2,7 @@
 
 Brief is a TypeScript SDK for publishing structured reports that are pleasant to read and easy for agents to update.
 
-[Open Brief](https://brief.harbr.run) · [Read the docs](https://brief.harbr.run/docs/) · [View the demo](https://brief.harbr.run/b/brf_demo) · [Install from npm](https://www.npmjs.com/package/@dawsson/brief)
+[Open Brief](https://brief.harbr.run) · [Read the docs](https://brief.harbr.run/docs/) · [View the demo](https://brief.harbr.run/b/16230282) · [Install from npm](https://www.npmjs.com/package/@dawsson/brief)
 
 ```sh
 bun add @dawsson/brief
@@ -49,10 +49,10 @@ No renderer structures leak into the SDK. Every Brief, page, section, block, and
 Brief selects a representation from the HTTP `Accept` header. There are no format query parameters and no parallel documents to keep in sync.
 
 ```sh
-curl https://brief.harbr.run/b/brf_demo -H 'Accept: text/html'
-curl https://brief.harbr.run/b/brf_demo -H 'Accept: text/markdown'
-curl https://brief.harbr.run/b/brf_demo -H 'Accept: text/plain'
-curl https://brief.harbr.run/b/brf_demo -H 'Accept: application/vnd.harbr.brief+json'
+curl https://brief.harbr.run/b/16230282 -H 'Accept: text/html'
+curl https://brief.harbr.run/b/16230282 -H 'Accept: text/markdown'
+curl https://brief.harbr.run/b/16230282 -H 'Accept: text/plain'
+curl https://brief.harbr.run/b/16230282 -H 'Accept: application/vnd.harbr.brief+json'
 ```
 
 Responses include `Vary: Accept` and an ETag. Unsupported representations receive `406 Not Acceptable`.

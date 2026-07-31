@@ -3,7 +3,7 @@ import {
   applyOperations,
   createDocument,
   createId,
-  toSlug,
+  createPageSlug,
   type BriefBlock,
   type BriefDocument,
   type BriefOperation,
@@ -204,7 +204,7 @@ export class Brief {
     this.document.pages.push({
       id: createId("pag"),
       title,
-      slug: toSlug(title),
+      slug: createPageSlug(),
       sections: [section],
     });
     const previous = this.activeSectionId;

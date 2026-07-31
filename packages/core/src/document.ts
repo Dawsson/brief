@@ -1,5 +1,5 @@
 import { BRIEF_SCHEMA_VERSION, type BriefDocument, type BriefVisibility } from "./types";
-import { createId, toSlug } from "./ids";
+import { createBriefId, createId, createPageSlug } from "./ids";
 
 export interface CreateBriefInput {
   description?: string;
@@ -13,7 +13,7 @@ export function createDocument(input: CreateBriefInput): BriefDocument {
   const pageTitle = "Overview";
   return {
     schemaVersion: BRIEF_SCHEMA_VERSION,
-    id: input.id ?? createId("brf"),
+    id: input.id ?? createBriefId(),
     title: input.title,
     ...(input.description === undefined ? {} : { description: input.description }),
     visibility: input.visibility ?? "private",
@@ -21,7 +21,7 @@ export function createDocument(input: CreateBriefInput): BriefDocument {
       {
         id: createId("pag"),
         title: pageTitle,
-        slug: toSlug(pageTitle),
+        slug: createPageSlug(),
         sections: [{ id: createId("sec"), blocks: [] }],
       },
     ],

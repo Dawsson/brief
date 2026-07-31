@@ -4,7 +4,7 @@ import { MemoryRepository } from "./repository";
 
 const repository = new MemoryRepository();
 const demo = createDocument({
-  id: "brf_demo",
+  id: "16230282",
   title: "Production Deployment",
   description: "A sample Brief rendered from canonical document state.",
   visibility: "public",
@@ -49,4 +49,4 @@ await repository.putBrief(demo);
 
 const app = createApp({ repository });
 const server = Bun.serve({ port: 4000, fetch: app.fetch });
-console.log(`Brief API listening on ${server.url} · sample ${server.url}b/brf_demo`);
+console.log(`Brief API listening on ${server.url} · sample ${server.url}b/16230282`);
