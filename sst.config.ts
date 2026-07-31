@@ -26,6 +26,7 @@ export default $config({
       path: "apps/api",
       link: [table, bucket],
       copyFiles: [
+        { from: "apps/api/package.json", to: "package.json" },
         { from: "apps/web/dist", to: "static/web" },
         { from: "apps/admin/dist", to: "static/admin" },
         { from: "apps/docs/dist", to: "static/docs" },
