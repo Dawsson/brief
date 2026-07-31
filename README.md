@@ -89,6 +89,14 @@ bun dev
 
 Local development uses in-memory persistence and asset storage. The first registration for `hello@dawson.gg` creates the initial admin; all later accounts require an invite.
 
+Agent credentials use a one-time device flow. Registration creates only the human passkey account;
+it never displays an API token. Run the CLI, approve the matching code in the browser, and let Brief
+store the credential locally:
+
+```sh
+bunx @dawsson/brief login
+```
+
 ```sh
 bun test
 bun lint

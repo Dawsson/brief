@@ -85,7 +85,7 @@ function App() {
           </div>
           <Section id="quickstart" title="Quickstart">
             <p>Install the SDK with Bun and configure your API credentials.</p>
-            <Code>{`bun add @dawsson/brief\n\nexport BRIEF_API_URL=https://brief.harbr.run\nexport BRIEF_API_TOKEN=brief_live_...`}</Code>
+            <Code>{`bun add @dawsson/brief\nbunx @dawsson/brief login`}</Code>
             <Code>{`import { Brief } from "@dawsson/brief"\n\nconst brief = await Brief.create({\n  title: "Deployment Report",\n  visibility: "public",\n})\n\nbrief.hero("Production is healthy", "Completed in 4m 12s")\nbrief.summary("Deployment completed successfully.")\nbrief.todo(["Warm cache", "Verify production"])\nbrief.logs(stdout)\n\nawait brief.publish()\nconsole.log(brief.url)`}</Code>
           </Section>
           <Section id="updates" title="Update in place">
@@ -164,8 +164,9 @@ function App() {
           <Section id="auth" title="Passkeys and agents">
             <p>
               Human accounts are invite-only and use WebAuthn passkeys—no passwords and no OAuth.
-              After authentication, Brief issues a revocable bearer token for agent SDK access.
-              Never ship that token to a browser.
+              Run <code>bunx @dawsson/brief login</code> to connect an agent. Brief opens a short
+              approval page, delivers the token directly to the CLI, and stores only its hash on the
+              server. The token is never exposed in the browser.
             </p>
           </Section>
         </main>

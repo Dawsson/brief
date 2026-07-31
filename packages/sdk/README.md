@@ -4,7 +4,12 @@ The TypeScript SDK for creating and continuously updating Brief reports.
 
 ```sh
 bun add @dawsson/brief
+bunx @dawsson/brief login
 ```
+
+`brief login` opens a short approval page in your browser. Confirm the matching code and the CLI
+saves the agent credential privately to `~/.config/brief/credentials.json`. The SDK loads it
+automatically; the token is never shown in the browser or terminal.
 
 ```ts
 import { Brief } from "@dawsson/brief";
@@ -38,7 +43,8 @@ brief.logs.append(newLogs);
 await brief.commit();
 ```
 
-Set `BRIEF_API_URL` and `BRIEF_API_TOKEN` in the environment, or pass them explicitly:
+For CI and other non-interactive environments, set `BRIEF_API_URL` and `BRIEF_API_TOKEN`, or pass
+them explicitly:
 
 ```ts
 const brief = await Brief.create(
