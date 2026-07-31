@@ -1,7 +1,9 @@
+import devServer from "@hono/vite-dev-server";
 import { resolve } from "node:path";
 import { defineConfig } from "vite-plus";
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+  plugins: [devServer({ entry: "src/dev.ts" })],
   build: {
     emptyOutDir: true,
     lib: {
@@ -14,5 +16,5 @@ export default defineConfig({
     ssr: true,
     target: "node24",
   },
-  ssr: { noExternal: true },
-});
+  ssr: command === "serve" ? { external: ["highlight.js"] } : { noExternal: true },
+}));

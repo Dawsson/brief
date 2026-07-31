@@ -17,14 +17,26 @@ describe("HTML renderer", () => {
       language: "typescript",
       code: 'const status: string = "healthy";',
     });
+    document.pages.push({
+      id: "pag_logs",
+      title: "Logs",
+      slug: "93016482",
+      sections: [{ id: "sec_logs", blocks: [] }],
+    });
 
     const rendered = renderBrief(document, "text/html");
 
     expect(rendered.body).toContain("https://rsms.me/inter/inter.css");
-    expect(rendered.body).toContain("font-family:InterVariable,Inter");
     expect(rendered.body).toContain("<title>Build &lt;Report&gt; — Brief</title>");
     expect(rendered.body).toContain("Production is healthy.");
     expect(rendered.body).toContain('<span class="hljs-keyword">const</span>');
+    expect(rendered.body).toContain("On This Page");
+    expect(rendered.body).toContain('data-active="true"');
+    expect(rendered.body).toContain("requestAnimationFrame(update)");
+    expect(rendered.body).toContain('href="https://github.com/Dawsson/brief"');
+    expect(rendered.body).toContain("Updated ");
+    expect(rendered.body).not.toContain('class="wordmark"');
+    expect(rendered.body).not.toContain('class="meta"');
     expect(rendered.body).not.toContain("ui-serif");
   });
 });

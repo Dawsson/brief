@@ -6,7 +6,7 @@
   "scripts": {
     "build": "vp build",
     "build:watch": "vp build --watch",
-    "dev": "bun --watch src/dev.ts",
+    "dev": "vp dev --host 0.0.0.0 --port 4000",
     "seed:demo": "bun scripts/seed-demo.ts",
     "test": "vp test"
   },
@@ -23,6 +23,7 @@
     "zod": "^4.0.17"
   },
   "devDependencies": {
+    "@hono/vite-dev-server": "^0.26.1",
     "@types/aws-lambda": "^8.10.152",
     "@types/bun": "^1.3.5",
     "typescript": "^6.0.2",

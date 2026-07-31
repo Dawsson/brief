@@ -1,4 +1,4 @@
-import { appendBlock, createDocument, createId } from "@brief/core";
+import { appendBlock, createDocument, createId, type BriefPage } from "@brief/core";
 import { createApp } from "./app";
 import { MemoryRepository } from "./repository";
 
@@ -42,11 +42,31 @@ appendBlock(demo, {
 });
 appendBlock(demo, {
   id: createId("blk"),
-  type: "logs",
-  content: "12:41:02  api /readyz 200\n12:41:03  web / 200\n12:41:04  cache warmed\n",
+  type: "code",
+  filename: "deploy.ts",
+  language: "typescript",
+  code: 'const brief = await Brief.open("16230282");\nbrief.logs.append("Deployment verified.");\nawait brief.commit();',
 });
+demo.pages.push({
+  id: createId("pag"),
+  title: "Logs",
+  slug: "93016482",
+  sections: [
+    {
+      id: createId("sec"),
+      title: "Release output",
+      blocks: [
+        {
+          id: createId("blk"),
+          type: "logs",
+          content: "12:41:02  api /readyz 200\n12:41:03  web / 200\n12:41:04  cache warmed\n",
+        },
+      ],
+    },
+  ],
+} satisfies BriefPage);
 await repository.putBrief(demo);
 
 const app = createApp({ repository });
-const server = Bun.serve({ port: 4000, fetch: app.fetch });
-console.log(`Brief API listening on ${server.url} · sample ${server.url}b/16230282`);
+
+export default app;
