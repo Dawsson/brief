@@ -7,6 +7,7 @@
     "build": "vp build",
     "build:watch": "vp build --watch",
     "dev": "bun --watch src/dev.ts",
+    "seed:demo": "bun scripts/seed-demo.ts",
     "test": "vp test"
   },
   "dependencies": {
