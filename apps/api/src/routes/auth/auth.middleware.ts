@@ -1,7 +1,7 @@
 import { middleware } from "@pier/backend/builders";
 
-import { apiErrors, type BriefContext } from "../procedure";
-import type { UserRecord } from "./model";
+import { apiErrors, type BriefContext } from "../../../procedure";
+import type { UserRecord } from "../../data/model";
 
 export const requireUser = middleware<unknown, { readonly user: UserRecord }>(
   async ({ ctx, next }) => {

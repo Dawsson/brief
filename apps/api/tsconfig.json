@@ -4,5 +4,5 @@
     "paths": { "#pier/*": ["./src/.pier/*"] },
     "types": ["node", "bun", "aws-lambda"]
   },
-  "include": ["scripts", "src", "vite.config.ts"]
+  "include": ["scripts", "src", "sst-env.d.ts", "vite.config.ts"]
 }

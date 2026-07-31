@@ -17,10 +17,10 @@ const contentTypes: Readonly<Record<string, string>> = {
   ".woff2": "font/woff2",
 };
 
-interface StaticTarget {
+type StaticTarget = {
   readonly file: string;
   readonly site: "admin" | "docs" | "web";
-}
+};
 
 export async function serveStaticPath(rawPath: string): Promise<Response | undefined> {
   const target = staticTarget(rawPath);

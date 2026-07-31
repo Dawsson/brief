@@ -2,7 +2,7 @@ import { briefContentTypes, negotiateContentType, renderBrief } from "@brief/ren
 import { z } from "zod";
 
 import { apiErrors, procedure } from "../../../procedure";
-import type { Repository } from "../../repository";
+import type { Repository } from "../../data/repository";
 
 const publicInput = z.object({ id: z.string().min(1) });
 const secretInput = z.object({ id: z.string().min(1), secret: z.string().min(1) });

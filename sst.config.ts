@@ -18,9 +18,8 @@ export default $config({
   },
   async run() {
     const productionOrigin = "https://brief.harbr.run";
-    const appOrigin =
-      process.env.BRIEF_APP_ORIGIN ??
-      ($app.stage === "production" ? productionOrigin : "http://localhost:5174");
+    const production = $app.stage === "production";
+    const appOrigin = production ? productionOrigin : "http://localhost:5174";
 
     const table = new sst.aws.Dynamo("Database", {
       fields: { pk: "string", sk: "string" },
@@ -37,11 +36,10 @@ export default $config({
         { from: "apps/docs/dist", to: "static/docs" },
       ],
       environment: {
-        BRIEF_TABLE: table.name,
-        BRIEF_BUCKET: bucket.name,
         BRIEF_ADMIN_EMAIL: "hello@dawson.gg",
         BRIEF_APP_ORIGIN: appOrigin,
-        BRIEF_RP_ID: process.env.BRIEF_RP_ID ?? new URL(appOrigin).hostname,
+        BRIEF_RP_ID: new URL(appOrigin).hostname,
+        NODE_ENV: production ? "production" : "development",
       },
       build: {
         command: "bun run build:watch",
@@ -49,7 +47,7 @@ export default $config({
       },
     });
 
-    const publicUrl = $app.stage === "production" ? `${productionOrigin}/` : api.url;
+    const publicUrl = production ? `${productionOrigin}/` : api.url;
     return {
       api: publicUrl,
       web: publicUrl,

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { apiErrors, procedure } from "../../../procedure";
-import { serveStaticPath } from "../../static-files";
+import { serveStaticPath } from "./static.service";
 
 const fileInput = z.object({ file: z.string().min(1) });
 const routeInput = z.object({ route: z.string().min(1) });

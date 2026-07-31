@@ -2,10 +2,10 @@ import type { AuthenticationResponseJSON, RegistrationResponseJSON } from "@simp
 import { z } from "zod";
 
 import { authenticationError, apiErrors, procedure } from "../../../procedure";
-import { requireUser } from "../../auth-middleware";
-import type { UserRecord } from "../../model";
+import type { UserRecord } from "../../data/model";
+import type { BriefServices } from "../../runtime/services";
 import { emptyInputSchema, publicUser, userSchema } from "../../schemas";
-import type { BriefServices } from "../../services";
+import { requireUser } from "./auth.middleware";
 
 const registerInput = z.object({ email: z.email(), inviteToken: z.string().nullable().optional() });
 const flowInput = z.object({ flowId: z.string().min(1), response: z.unknown() });

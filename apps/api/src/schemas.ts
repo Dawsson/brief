@@ -1,7 +1,7 @@
 import { BRIEF_SCHEMA_VERSION, type BriefDocument } from "@brief/core";
 import { z } from "zod";
 
-import type { InviteRecord, UserRecord } from "./model";
+import type { InviteRecord, UserRecord } from "./data/model";
 
 export const emptyInputSchema = z.object({}).strict();
 

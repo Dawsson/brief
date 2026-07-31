@@ -1,9 +1,8 @@
 import { z } from "zod";
 
 import { procedure } from "../../../procedure";
-import { requireAdmin } from "../../auth-middleware";
-import { hashToken, randomToken } from "../../crypto";
-import type { InviteRecord } from "../../model";
+import type { InviteRecord } from "../../data/model";
+import { hashToken, randomToken } from "../../security/tokens";
 import {
   briefDocumentSchema,
   inviteSchema,
@@ -11,6 +10,7 @@ import {
   publicUser,
   userSchema,
 } from "../../schemas";
+import { requireAdmin } from "../auth/auth.middleware";
 
 const adminProcedure = procedure.use(requireAdmin);
 const inviteInput = z.object({

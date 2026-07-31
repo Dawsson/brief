@@ -6,9 +6,15 @@ import {
   type AuthenticationResponseJSON,
   type RegistrationResponseJSON,
 } from "@simplewebauthn/server";
-import { base64ToBytes, bytesToBase64, hashToken, randomToken, randomUserCode } from "./crypto";
-import type { DeviceAuthorizationRecord, FlowRecord, UserRecord, UserRole } from "./model";
-import type { Repository } from "./repository";
+import type { DeviceAuthorizationRecord, FlowRecord, UserRecord, UserRole } from "../../data/model";
+import type { Repository } from "../../data/repository";
+import {
+  base64ToBytes,
+  bytesToBase64,
+  hashToken,
+  randomToken,
+  randomUserCode,
+} from "../../security/tokens";
 
 const SESSION_COOKIE = "brief_session";
 

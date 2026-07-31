@@ -1,5 +1,6 @@
 import {
   GetObjectCommand,
+  HeadObjectCommand,
   ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
@@ -19,10 +20,9 @@ export interface UploadTarget {
   uploadUrl: string;
 }
 
-export interface StoredAsset {
-  body: BodyInit;
-  contentType: string;
-}
+export type StoredAsset =
+  | { readonly body: BodyInit; readonly contentType: string; readonly kind: "body" }
+  | { readonly kind: "redirect"; readonly url: string };
 
 export interface StorageService {
   bytesUsed(): Promise<number>;
@@ -58,7 +58,8 @@ export class LocalStorageService implements StorageService {
     };
   }
   async get(key: string) {
-    return this.assets.get(key);
+    const asset = this.assets.get(key);
+    return asset ? { ...asset, kind: "body" as const } : undefined;
   }
   async putLocal(key: string, body: Uint8Array<ArrayBuffer>, contentType: string) {
     this.assets.set(key, { body, contentType });
@@ -88,16 +89,18 @@ export class S3StorageService implements StorageService {
   }
   async get(key: string) {
     try {
-      const response = await this.client.send(
-        new GetObjectCommand({ Bucket: this.bucket, Key: key }),
-      );
-      if (!response.Body) return undefined;
+      await this.client.send(new HeadObjectCommand({ Bucket: this.bucket, Key: key }));
       return {
-        body: response.Body.transformToWebStream() as ReadableStream<Uint8Array>,
-        contentType: response.ContentType ?? "application/octet-stream",
+        kind: "redirect" as const,
+        url: await getSignedUrl(
+          this.client,
+          new GetObjectCommand({ Bucket: this.bucket, Key: key }),
+          { expiresIn: 300 },
+        ),
       };
     } catch (cause) {
-      if (cause instanceof Error && cause.name === "NoSuchKey") return undefined;
+      const name = cause instanceof Error ? cause.name : undefined;
+      if (name === "NotFound" || name === "NoSuchKey") return undefined;
       throw cause;
     }
   }

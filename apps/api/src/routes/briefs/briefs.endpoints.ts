@@ -2,10 +2,10 @@ import { applyOperations, type BriefDocument } from "@brief/core";
 import { z } from "zod";
 
 import { apiErrors, procedure } from "../../../procedure";
-import { requireUser } from "../../auth-middleware";
-import { randomToken } from "../../crypto";
-import type { UserRecord } from "../../model";
-import type { Repository } from "../../repository";
+import type { UserRecord } from "../../data/model";
+import type { Repository } from "../../data/repository";
+import { requireUser } from "../auth/auth.middleware";
+import { randomToken } from "../../security/tokens";
 import { briefDocumentSchema, emptyInputSchema } from "../../schemas";
 
 const idInput = z.object({ id: z.string().min(1) });

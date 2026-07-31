@@ -2,7 +2,7 @@ import { procedure as pierProcedure } from "@pier/backend/builders";
 import { createErrorFactories, platformErrors } from "@pier/backend/errors";
 import { defaultErrors, error } from "@pier/backend/responses";
 
-import type { BriefServices } from "./src/services";
+import type { BriefServices } from "./src/runtime/services";
 
 const applicationErrorDefinitions = {
   ...platformErrors,

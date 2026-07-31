@@ -1,5 +1,6 @@
 import type { BriefDocument } from "@brief/core";
-import { DynamoRepository } from "../src/dynamo-repository";
+import { Resource } from "sst";
+import { DynamoRepository } from "../src/data/dynamo-repository";
 
 const timestamp = "2026-07-31T00:00:00.000Z";
 
@@ -84,19 +85,6 @@ const demo: BriefDocument = {
   ],
 };
 
-function databaseName(): string {
-  if (process.env.BRIEF_TABLE) return process.env.BRIEF_TABLE;
-  const linkedResource = process.env.SST_RESOURCE_Database;
-  if (!linkedResource) throw new Error("Run this command through `sst shell --stage <stage>`");
-  const resource: unknown = JSON.parse(linkedResource);
-  if (!resource || typeof resource !== "object" || !("name" in resource)) {
-    throw new Error("The linked Database resource has no name");
-  }
-  const { name } = resource;
-  if (typeof name !== "string") throw new Error("The linked Database name is invalid");
-  return name;
-}
-
-const repository = new DynamoRepository(databaseName());
+const repository = new DynamoRepository(Resource.Database.name);
 await repository.putBrief(demo);
-console.log("Seeded https://brief.harbr.run/b/16230282");
+console.log(`Seeded Brief ${demo.id} in ${Resource.Database.name}`);

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { apiErrors, procedure } from "../../../procedure";
-import { requireUser } from "../../auth-middleware";
+import { requireUser } from "../auth/auth.middleware";
 
 const uploadInput = z.object({
   contentType: z.string().min(1).max(120),
@@ -46,11 +46,23 @@ export const createUpload = procedure
 export const readAsset = procedure
   .GET("/v1/storage/assets/:ownerId/:uploadId/:filename")
   .input(keyInput)
-  .output({ 200: z.unknown() })
+  .output({
+    200: z.unknown(),
+    307: { description: "Temporary redirect to a signed S3 object URL" },
+  })
   .openapi({ summary: "Read a stored asset", tags: ["Storage"] })
   .handler(async ({ ctx, input }) => {
     const asset = await ctx.services.storage.get(keyFrom(input));
     if (!asset) throw apiErrors.NOT_FOUND({ detail: "Asset not found" });
+    if (asset.kind === "redirect") {
+      return new Response(null, {
+        headers: {
+          "cache-control": "private, no-store",
+          location: asset.url,
+        },
+        status: 307,
+      });
+    }
     return new Response(asset.body, {
       headers: {
         "cache-control": "public, max-age=31536000, immutable",

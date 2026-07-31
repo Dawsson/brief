@@ -7,7 +7,7 @@
     "build": "vp build --mode aws",
     "build:watch": "vp build --mode aws --watch",
     "dev": "vp dev --host 0.0.0.0 --port 4000",
-    "seed:demo": "bun scripts/seed-demo.ts",
+    "seed:demo": "sst shell bun scripts/seed-demo.ts",
     "test": "vp test"
   },
   "dependencies": {
@@ -20,6 +20,7 @@
     "@brief/shared": "workspace:*",
     "@pier/backend": "link:@pier/backend",
     "@simplewebauthn/server": "^13.2.2",
+    "sst": "^4.17.1",
     "zod": "^4.0.17"
   },
   "devDependencies": {

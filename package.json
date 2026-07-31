@@ -11,7 +11,7 @@
   "scripts": {
     "build": "vp run -r build",
     "check": "sst install && vp check",
-    "dev": "concurrently --kill-others --names api,web,admin,docs --prefix-colors blue,green,magenta,cyan \"vp run @brief/api#dev\" \"vp run @brief/web#dev\" \"vp run @brief/admin#dev\" \"vp run @brief/docs#dev\"",
+    "dev": "concurrently --kill-others --names sst,web,admin,docs --prefix-colors blue,green,magenta,cyan \"sst dev\" \"vp run @brief/web#dev\" \"vp run @brief/admin#dev\" \"vp run @brief/docs#dev\"",
     "deploy": "vp run -r build && sst deploy",
     "deploy:edge": "vp run @brief/edge#deploy",
     "lint": "vp lint",

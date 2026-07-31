@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { procedure } from "../../../procedure";
-import { serveStaticPath } from "../../static-files";
+import { serveStaticPath } from "../static/static.service";
 
 export const root = procedure
   .GET("/")

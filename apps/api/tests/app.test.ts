@@ -1,8 +1,8 @@
 import { createDocument } from "@brief/core";
 import { describe, expect, test } from "vite-plus/test";
-import { createApp } from "../src/app";
-import { hashToken } from "../src/crypto";
-import { MemoryRepository } from "../src/repository";
+import { MemoryRepository } from "../src/data/repository";
+import { hashToken } from "../src/security/tokens";
+import { createTestApp } from "../src/testing/create-test-app";
 
 describe("public Brief route", () => {
   test("negotiates Markdown and rejects unsupported types", async () => {
@@ -10,7 +10,7 @@ describe("public Brief route", () => {
     const document = createDocument({ title: "Deploy", visibility: "public" });
     document.version = 1;
     await repository.putBrief(document);
-    const app = createApp({ repository });
+    const app = createTestApp({ repository });
 
     const markdown = await app.request(`/b/${document.id}`, {
       headers: { accept: "text/markdown" },
@@ -26,7 +26,7 @@ describe("public Brief route", () => {
 
 describe("browser API access", () => {
   test("allows credentialed local app origins", async () => {
-    const app = createApp({ repository: new MemoryRepository() });
+    const app = createTestApp({ repository: new MemoryRepository() });
     const origin = "http://127.0.0.1:5174";
     const response = await app.request("/v1/auth/authenticate/options", {
       method: "OPTIONS",
@@ -44,7 +44,7 @@ describe("browser API access", () => {
   });
 
   test("does not grant unknown origins browser access", async () => {
-    const app = createApp({ repository: new MemoryRepository() });
+    const app = createTestApp({ repository: new MemoryRepository() });
     const response = await app.request("/healthz", {
       headers: { origin: "https://not-brief.example" },
     });
@@ -65,7 +65,7 @@ describe("CLI device authorization", () => {
       apiTokenHash: await hashToken(legacyToken),
     };
     await repository.putUser(user);
-    const app = createApp({ repository });
+    const app = createTestApp({ repository });
 
     const started = await app.request("/v1/auth/device/code", { method: "POST" });
     expect(started.status).toBe(201);

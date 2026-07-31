@@ -52,9 +52,9 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
   });
   if (!response.ok) {
     const body = (await response.json().catch(() => undefined)) as
-      | { error?: { message?: string } }
+      | { detail?: string; error?: { message?: string }; title?: string }
       | undefined;
-    throw new Error(body?.error?.message ?? response.statusText);
+    throw new Error(body?.detail ?? body?.error?.message ?? body?.title ?? response.statusText);
   }
   return response.json() as Promise<T>;
 }

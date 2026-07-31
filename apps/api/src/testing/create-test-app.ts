@@ -1,17 +1,17 @@
 import { isPierOperation } from "@pier/backend/builders";
 import { createPierRuntime, type PierRuntimeOperation } from "@pier/backend/runtime";
 
-import * as adminRoutes from "./routes/admin/admin.endpoints";
-import * as authRoutes from "./routes/auth/auth.endpoints";
-import * as briefRoutes from "./routes/briefs/briefs.endpoints";
-import * as publicRoutes from "./routes/public/public.endpoints";
-import * as staticRoutes from "./routes/static/static.endpoints";
-import * as storageRoutes from "./routes/storage/storage.endpoints";
-import * as systemRoutes from "./routes/system/system.endpoints";
-import allowedOriginMiddleware from "./middleware/01.origin.middleware";
-import { createServices, type CreateServicesOptions } from "./services";
+import allowedOriginMiddleware from "../middleware/01.origin.middleware";
+import * as adminRoutes from "../routes/admin/admin.endpoints";
+import * as authRoutes from "../routes/auth/auth.endpoints";
+import * as briefRoutes from "../routes/briefs/briefs.endpoints";
+import * as publicRoutes from "../routes/public/public.endpoints";
+import * as staticRoutes from "../routes/static/static.endpoints";
+import * as storageRoutes from "../routes/storage/storage.endpoints";
+import * as systemRoutes from "../routes/system/system.endpoints";
+import { createTestServices, type CreateTestServicesOptions } from "../runtime/services";
 
-export type CreateAppOptions = CreateServicesOptions;
+export type CreateTestAppOptions = CreateTestServicesOptions;
 
 const routeModules = {
   admin: adminRoutes,
@@ -31,8 +31,8 @@ const operations: PierRuntimeOperation[] = Object.entries(routeModules).flatMap(
 );
 
 /** Build an isolated Pier runtime for API tests and in-process consumers. */
-export function createApp(options: CreateAppOptions = {}) {
-  const services = createServices(options);
+export function createTestApp(options: CreateTestAppOptions = {}) {
+  const services = createTestServices(options);
   const runtime = createPierRuntime({
     createContext: (request) => ({ request, services }),
     logger: false,
