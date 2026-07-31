@@ -1,26 +1,15 @@
-import devServer from "@hono/vite-dev-server";
-import { resolve } from "node:path";
 import { defineConfig } from "vite-plus";
+import { pier } from "pier/vite";
 
-export default defineConfig(({ command }) => ({
-  plugins: [devServer({ entry: "src/dev.ts" })],
+export default defineConfig({
+  plugins: [pier({ devBuild: "aws" })],
   server: {
     cors: {
       origin: /^http:\/\/(localhost|127\.0\.0\.1):(5173|5174|5175)$/,
       credentials: true,
     },
+    host: "0.0.0.0",
+    port: 4000,
+    strictPort: true,
   },
-  build: {
-    emptyOutDir: true,
-    lib: {
-      entry: resolve(import.meta.dirname, "src/lambda.ts"),
-      formats: ["es"],
-      fileName: () => "server.js",
-    },
-    outDir: "dist/aws",
-    rollupOptions: { output: { entryFileNames: "server.js" } },
-    ssr: true,
-    target: "node24",
-  },
-  ssr: command === "serve" ? { external: ["highlight.js"] } : { noExternal: true },
-}));
+});

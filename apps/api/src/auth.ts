@@ -6,8 +6,6 @@ import {
   type AuthenticationResponseJSON,
   type RegistrationResponseJSON,
 } from "@simplewebauthn/server";
-import type { Context } from "hono";
-import { getCookie, setCookie } from "hono/cookie";
 import { base64ToBytes, bytesToBase64, hashToken, randomToken, randomUserCode } from "./crypto";
 import type { DeviceAuthorizationRecord, FlowRecord, UserRecord, UserRole } from "./model";
 import type { Repository } from "./repository";
@@ -181,20 +179,14 @@ export class AuthService {
     return user;
   }
 
-  async createSession(context: Context, user: UserRecord): Promise<void> {
+  async createSession(user: UserRecord): Promise<string> {
     const token = randomToken("session");
     await this.repository.putSession({
       idHash: await hashToken(token),
       userId: user.id,
       expiresAt: expiresIn(60 * 24 * 30),
     });
-    setCookie(context, SESSION_COOKIE, token, {
-      httpOnly: true,
-      sameSite: "Lax",
-      secure: this.configuration.origin.startsWith("https://"),
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30,
-    });
+    return token;
   }
 
   async createDeviceAuthorization() {
@@ -278,15 +270,15 @@ export class AuthService {
     return { status: "approved", token, user };
   }
 
-  async resolveUser(context: Context): Promise<UserRecord | undefined> {
-    const authorization = context.req.header("authorization");
+  async resolveUser(request: Request): Promise<UserRecord | undefined> {
+    const authorization = request.headers.get("authorization");
     if (authorization?.startsWith("Bearer ")) {
       const tokenHash = await hashToken(authorization.slice(7));
       const token = await this.repository.getApiToken(tokenHash);
       if (token) return this.repository.getUser(token.userId);
       return this.repository.findUserByApiTokenHash(tokenHash);
     }
-    const sessionToken = getCookie(context, SESSION_COOKIE);
+    const sessionToken = cookieValue(request.headers.get("cookie"), SESSION_COOKIE);
     if (!sessionToken) return undefined;
     const session = await this.repository.getSession(await hashToken(sessionToken));
     if (!session || session.expiresAt <= new Date().toISOString()) return undefined;
@@ -300,6 +292,15 @@ export class AuthService {
     }
     return flow;
   }
+}
+
+function cookieValue(header: string | null, name: string): string | undefined {
+  for (const part of header?.split(";") ?? []) {
+    const separator = part.indexOf("=");
+    if (separator < 0 || part.slice(0, separator).trim() !== name) continue;
+    return decodeURIComponent(part.slice(separator + 1).trim());
+  }
+  return undefined;
 }
 
 function normalizeUserCode(value: string): string {

@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "vp build",
-    "build:watch": "vp build --watch",
+    "build": "vp build --mode aws",
+    "build:watch": "vp build --mode aws --watch",
     "dev": "vp dev --host 0.0.0.0 --port 4000",
     "seed:demo": "bun scripts/seed-demo.ts",
     "test": "vp test"
@@ -18,14 +18,15 @@
     "@brief/core": "workspace:*",
     "@brief/renderer": "workspace:*",
     "@brief/shared": "workspace:*",
+    "@pier/backend": "link:@pier/backend",
     "@simplewebauthn/server": "^13.2.2",
-    "hono": "^4.9.2",
     "zod": "^4.0.17"
   },
   "devDependencies": {
-    "@hono/vite-dev-server": "^0.26.1",
+    "@pier/app-build": "link:@pier/app-build",
     "@types/aws-lambda": "^8.10.152",
     "@types/bun": "^1.3.5",
+    "pier": "link:pier",
     "typescript": "^6.0.2",
     "vite": "catalog:",
     "vite-plus": "catalog:"

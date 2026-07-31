@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 .sst
+.pier/
+.pier-local/
+.pier-packages/
 sst-env.d.ts
 .env
 .env.*

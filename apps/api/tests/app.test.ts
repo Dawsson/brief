@@ -49,8 +49,7 @@ describe("browser API access", () => {
       headers: { origin: "https://not-brief.example" },
     });
 
-    expect(response.status).toBe(200);
-    expect(response.headers.get("access-control-allow-origin")).toBeNull();
+    expect(response.status).toBe(403);
   });
 });
 
