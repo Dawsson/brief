@@ -2,7 +2,11 @@ import "@brief/ui/styles.css";
 import { Logo } from "@brief/ui";
 import { ArrowUpRight, ChevronRight } from "lucide-react";
 import { StrictMode, type ReactNode } from "react";
-import { createRoot } from "react-dom/client";
+import { createRoot, type Root } from "react-dom/client";
+
+declare global {
+  var briefDocsRoot: Root | undefined;
+}
 
 const homeUrl = import.meta.env.DEV ? "http://localhost:5173" : "/";
 
@@ -172,7 +176,9 @@ function App() {
 
 const root = document.querySelector<HTMLDivElement>("#root");
 if (!root) throw new Error("Root element not found");
-createRoot(root).render(
+const appRoot = globalThis.briefDocsRoot ?? createRoot(root);
+globalThis.briefDocsRoot = appRoot;
+appRoot.render(
   <StrictMode>
     <App />
   </StrictMode>,

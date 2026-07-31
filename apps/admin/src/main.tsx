@@ -20,7 +20,11 @@ import {
   Users,
 } from "lucide-react";
 import { StrictMode, useEffect, useState, type FormEvent } from "react";
-import { createRoot } from "react-dom/client";
+import { createRoot, type Root } from "react-dom/client";
+
+declare global {
+  var briefAdminRoot: Root | undefined;
+}
 
 const API_URL = import.meta.env.DEV ? "http://localhost:4000" : window.location.origin;
 
@@ -344,7 +348,9 @@ function App() {
 
 const root = document.querySelector<HTMLDivElement>("#root");
 if (!root) throw new Error("Root element not found");
-createRoot(root).render(
+const appRoot = globalThis.briefAdminRoot ?? createRoot(root);
+globalThis.briefAdminRoot = appRoot;
+appRoot.render(
   <StrictMode>
     <App />
   </StrictMode>,

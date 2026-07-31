@@ -2,11 +2,15 @@ import "@brief/ui/styles.css";
 import { Button, Logo } from "@brief/ui";
 import { ArrowRight, Check, Copy, FileText, SquareTerminal } from "lucide-react";
 import { StrictMode, useState } from "react";
-import { createRoot } from "react-dom/client";
+import { createRoot, type Root } from "react-dom/client";
+
+declare global {
+  var briefWebRoot: Root | undefined;
+}
 
 const adminUrl = import.meta.env.DEV ? "http://localhost:5174/admin/" : "/admin/";
 const docsUrl = import.meta.env.DEV ? "http://localhost:5175" : "/docs/";
-const createAccountUrl = `${adminUrl}?mode=register`;
+const createAccountUrl: string = `${adminUrl}?mode=register`;
 
 const sdkExample = [
   "const brief = await Brief.create({",
@@ -211,7 +215,9 @@ function App() {
 
 const root = document.querySelector<HTMLDivElement>("#root");
 if (!root) throw new Error("Root element not found");
-createRoot(root).render(
+const appRoot = globalThis.briefWebRoot ?? createRoot(root);
+globalThis.briefWebRoot = appRoot;
+appRoot.render(
   <StrictMode>
     <App />
   </StrictMode>,
