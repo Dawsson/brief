@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## 0.1.3 - 2026-08-04
+
+- Persist Markdown as a serializable TanStack Markdown AST and render deterministic technical
+  content from that durable tree.
+- Replace highlight.js with a synchronous, selective TanStack Highlight registry shared by
+  standalone code blocks and Markdown fences.
+- Add an optional streaming Markdown profile that reparses accumulated source without incremental
+  parser state.
+- Fix callback-free page and section authoring so subsequent blocks land in the new container, and
+  omit empty pages from the reader.
 - Migrated the API fully to source-driven Pier procedures and middleware with SST-linked DynamoDB
   and S3 resources in every running stage.
 - Split passkeys, registration policy, sessions, API keys, principal resolution, and CLI device

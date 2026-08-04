@@ -1,22 +1,17 @@
 import type { BlockNode, InlineNode, MarkdownDocument } from "@tanstack/markdown";
-import { streamingMarkdownExtension } from "@tanstack/markdown/extensions/streaming";
 import { renderHtml } from "@tanstack/markdown/html";
-import { parseMarkdown } from "@tanstack/markdown/parser";
-import type { LegacyMarkdownBlock, MarkdownBlock } from "@brief/core";
+import type { MarkdownBlock } from "@brief/core";
 import { highlightMarkdownCode } from "./highlight";
 
-type AnyMarkdownBlock = MarkdownBlock | LegacyMarkdownBlock;
-
-export function markdownSource(block: AnyMarkdownBlock): string {
-  return "source" in block ? block.source : block.content;
+export function markdownSource(block: MarkdownBlock): string {
+  return block.source;
 }
 
-export function markdownDocument(block: AnyMarkdownBlock): MarkdownDocument {
-  if ("document" in block) return block.document;
-  return parseMarkdown(block.content, { headingIds: true });
+export function markdownDocument(block: MarkdownBlock): MarkdownDocument {
+  return block.document;
 }
 
-export function markdownToHtml(block: AnyMarkdownBlock): string {
+export function markdownToHtml(block: MarkdownBlock): string {
   return renderHtml(markdownDocument(block), { highlighter: highlightMarkdownCode });
 }
 
@@ -56,10 +51,6 @@ function blockText(node: BlockNode): string {
   return "";
 }
 
-export function markdownToText(block: AnyMarkdownBlock): string {
+export function markdownToText(block: MarkdownBlock): string {
   return markdownDocument(block).children.map(blockText).filter(Boolean).join("\n\n").trim();
-}
-
-export function parseStreamingMarkdown(source: string): MarkdownDocument {
-  return parseMarkdown(source, { extensions: [streamingMarkdownExtension()], headingIds: true });
 }

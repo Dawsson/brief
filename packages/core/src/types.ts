@@ -25,11 +25,6 @@ export interface MarkdownBlock extends BaseBlock {
   profile?: "streaming";
 }
 
-export interface LegacyMarkdownBlock extends BaseBlock {
-  type: "markdown";
-  content: string;
-}
-
 export interface ChecklistItem {
   id: string;
   text: string;
@@ -93,7 +88,6 @@ export interface SpacerBlock extends BaseBlock {
 export type BriefBlock =
   | HeroBlock
   | MarkdownBlock
-  | LegacyMarkdownBlock
   | ChecklistBlock
   | CodeBlock
   | LogsBlock

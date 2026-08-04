@@ -21,7 +21,18 @@ describe("HTML renderer", () => {
       id: "pag_logs",
       title: "Logs",
       slug: "93016482",
-      sections: [{ id: "sec_logs", blocks: [] }],
+      sections: [
+        {
+          id: "sec_logs",
+          blocks: [{ id: "blk_logs", type: "logs", content: "ready" }],
+        },
+      ],
+    });
+    document.pages.push({
+      id: "pag_empty",
+      title: "Empty",
+      slug: "93016483",
+      sections: [{ id: "sec_empty", blocks: [] }],
     });
 
     const rendered = renderBrief(document, "text/html");
@@ -42,7 +53,8 @@ describe("HTML renderer", () => {
     expect(rendered.body).not.toContain('class="wordmark"');
     expect(rendered.body).not.toContain('class="meta"');
     expect(rendered.body).not.toContain("ui-serif");
-    expect(rendered.body).not.toContain(">Logs</a>");
+    expect(rendered.body).toContain(">Logs</a>");
+    expect(rendered.body).not.toContain(">Empty</a>");
   });
 
   test("renders Markdown from a durable AST with explicit external highlighting", () => {

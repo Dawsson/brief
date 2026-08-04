@@ -24,6 +24,7 @@ brief.summary("All services passed their post-deploy checks.");
 brief.todo(["Warm cache", "Verify production"]);
 brief.metric("P95 latency", "184 ms", { trend: "down" });
 brief.logs(stdout);
+brief.markdown(accumulatedResponse, { profile: "streaming" });
 
 await brief.publish();
 console.log(brief.url);
@@ -67,6 +68,10 @@ brief.page("Metrics", (page) => {
   });
 });
 ```
+
+`markdown(content, { profile: "streaming" })` reparses accumulated AI output from the complete
+source on every update; it does not retain incremental parser state. Without a callback, a newly
+created page or section remains active for subsequent blocks.
 
 Brief renders the same canonical document as HTML, Markdown, plain text, or canonical JSON through HTTP content negotiation.
 

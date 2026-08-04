@@ -4,6 +4,7 @@ import {
   createDocument,
   createId,
   createPageSlug,
+  parseBriefMarkdown,
   type BriefBlock,
   type BriefDocument,
   type BriefOperation,
@@ -13,8 +14,6 @@ import {
   type Primitive,
   type SpacerSize,
 } from "@brief/core";
-import { streamingMarkdownExtension } from "@tanstack/markdown/extensions/streaming";
-import { parseMarkdown } from "@tanstack/markdown/parser";
 
 export interface BriefClientOptions {
   apiUrl?: string;
@@ -43,10 +42,7 @@ function markdownBlock(id: string, source: string, options: MarkdownOptions = {}
     id,
     type: "markdown",
     source,
-    document: parseMarkdown(source, {
-      headingIds: true,
-      ...(streaming ? { extensions: [streamingMarkdownExtension()] } : {}),
-    }),
+    document: parseBriefMarkdown(source, options.profile),
     ...(streaming ? { profile: "streaming" as const } : {}),
   };
 }

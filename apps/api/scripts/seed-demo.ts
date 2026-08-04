@@ -1,8 +1,10 @@
-import type { BriefDocument } from "@brief/core";
+import { parseBriefMarkdown, type BriefDocument } from "@brief/core";
 import { Resource } from "sst";
 import { DynamoRepository } from "../src/data/dynamo-repository";
 
 const timestamp = "2026-07-31T00:00:00.000Z";
+const summary =
+  "## Summary\nThe release completed without interruption. **API latency is stable** and every routed health check is passing.";
 
 const demo: BriefDocument = {
   schemaVersion: 1,
@@ -33,8 +35,8 @@ const demo: BriefDocument = {
             {
               id: "blk_demo_summary",
               type: "markdown",
-              content:
-                "## Summary\nThe release completed without interruption. **API latency is stable** and every routed health check is passing.",
+              source: summary,
+              document: parseBriefMarkdown(summary),
             },
             {
               id: "blk_demo_metric",
