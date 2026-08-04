@@ -33,6 +33,31 @@ describe("Brief SDK", () => {
     expect(todo?.type === "checklist" ? todo.items[0]?.checked : undefined).toBe(true);
   });
 
+  test("keeps a page active when no builder callback is supplied", async () => {
+    const brief = await Brief.create({ title: "Migration plan" });
+
+    brief.page("Decisions");
+    brief.markdown("## Runtime\n\nUse Node.js.");
+
+    const overview = brief.state.pages[0];
+    const decisions = brief.state.pages[1];
+    expect(overview?.sections[0]?.blocks).toHaveLength(0);
+    expect(decisions?.sections[0]?.blocks).toHaveLength(1);
+  });
+
+  test("stores a serializable Markdown AST and reparses streaming updates from source", async () => {
+    const brief = await Brief.create({ title: "AI response" });
+
+    brief.markdown("## Result\n\n```ts\nconst answer =", { profile: "streaming" });
+
+    const block = brief.state.pages[0]?.sections[0]?.blocks[0];
+    expect(block).toMatchObject({ type: "markdown", profile: "streaming" });
+    expect(
+      block?.type === "markdown" && "document" in block ? block.document.type : undefined,
+    ).toBe("root");
+    expect(() => JSON.stringify(brief.state)).not.toThrow();
+  });
+
   test("uses credentials saved by brief login", async () => {
     const directory = await mkdtemp(join(tmpdir(), "brief-sdk-login-"));
     process.env.XDG_CONFIG_HOME = directory;

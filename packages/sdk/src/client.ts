@@ -13,6 +13,8 @@ import {
   type Primitive,
   type SpacerSize,
 } from "@brief/core";
+import { streamingMarkdownExtension } from "@tanstack/markdown/extensions/streaming";
+import { parseMarkdown } from "@tanstack/markdown/parser";
 
 export interface BriefClientOptions {
   apiUrl?: string;
@@ -29,6 +31,24 @@ export interface CreateBriefOptions {
 export interface CodeOptions {
   filename?: string;
   language?: string;
+}
+
+export interface MarkdownOptions {
+  profile?: "streaming";
+}
+
+function markdownBlock(id: string, source: string, options: MarkdownOptions = {}): BriefBlock {
+  const streaming = options.profile === "streaming";
+  return {
+    id,
+    type: "markdown",
+    source,
+    document: parseMarkdown(source, {
+      headingIds: true,
+      ...(streaming ? { extensions: [streamingMarkdownExtension()] } : {}),
+    }),
+    ...(streaming ? { profile: "streaming" as const } : {}),
+  };
 }
 
 export interface CalloutOptions {
@@ -220,8 +240,10 @@ export class Brief {
     });
     const previous = this.activeSectionId;
     this.activeSectionId = section.id;
-    build?.(this);
-    this.activeSectionId = previous;
+    if (build) {
+      build(this);
+      this.activeSectionId = previous;
+    }
     return this;
   }
 
@@ -235,8 +257,10 @@ export class Brief {
     page.sections.push(section);
     const previous = this.activeSectionId;
     this.activeSectionId = section.id;
-    build?.(this);
-    this.activeSectionId = previous;
+    if (build) {
+      build(this);
+      this.activeSectionId = previous;
+    }
     return this;
   }
 
@@ -250,8 +274,8 @@ export class Brief {
     });
   }
 
-  markdown(content: string): BlockHandle {
-    return this.add({ id: createId("blk"), type: "markdown", content });
+  markdown(content: string, options: MarkdownOptions = {}): BlockHandle {
+    return this.add(markdownBlock(createId("blk"), content, options));
   }
 
   code(code: string, options: CodeOptions = {}): BlockHandle {
@@ -346,7 +370,7 @@ export class Brief {
   }
 
   private addSummary(content: string): BlockHandle {
-    const block = { id: createId("blk"), type: "markdown" as const, content };
+    const block = markdownBlock(createId("blk"), content);
     this.summaryId = block.id;
     this.add(block);
     return new BlockHandle(this, block.id);
@@ -373,7 +397,11 @@ export class Brief {
   private replaceKnown(type: "logs" | "markdown", content: string): BlockHandle {
     const id = type === "logs" ? this.logsId : this.summaryId;
     if (!id) throw new Error(`This brief has no ${type} block yet`);
-    this.queue({ kind: "replace", targetId: id, value: { id, type, content } });
+    this.queue({
+      kind: "replace",
+      targetId: id,
+      value: type === "markdown" ? markdownBlock(id, content) : { id, type, content },
+    });
     return new BlockHandle(this, id);
   }
 

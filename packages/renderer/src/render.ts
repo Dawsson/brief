@@ -1,6 +1,6 @@
 import type { BriefBlock, BriefDocument, Primitive } from "@brief/core";
 import { renderHtml } from "./html";
-import { markdownToText } from "./markdown";
+import { markdownSource, markdownToText } from "./markdown";
 import type { BriefContentType } from "./content-types";
 
 export interface RenderedBrief {
@@ -18,7 +18,7 @@ function blockToMarkdown(block: BriefBlock): string {
     case "hero":
       return `${block.eyebrow ? `${block.eyebrow}\n\n` : ""}# ${block.title}${block.subtitle ? `\n\n${block.subtitle}` : ""}`;
     case "markdown":
-      return block.content;
+      return markdownSource(block);
     case "checklist":
       return block.items.map((item) => `- [${item.checked ? "x" : " "}] ${item.text}`).join("\n");
     case "code":
@@ -47,7 +47,7 @@ function blockToMarkdown(block: BriefBlock): string {
 }
 
 function blockToText(block: BriefBlock): string {
-  if (block.type === "markdown") return markdownToText(block.content);
+  if (block.type === "markdown") return markdownToText(block);
   if (block.type === "checklist") {
     return block.items.map((item) => `${item.checked ? "[x]" : "[ ]"} ${item.text}`).join("\n");
   }

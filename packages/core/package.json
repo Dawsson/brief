@@ -8,6 +8,9 @@
     "build": "vp pack",
     "test": "vp test"
   },
+  "dependencies": {
+    "@tanstack/markdown": "^0.0.12"
+  },
   "devDependencies": {
     "typescript": "^6.0.2",
     "vite": "catalog:",

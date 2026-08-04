@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "@brief/core": "workspace:*",
-    "highlight.js": "^11.11.1",
+    "@tanstack/highlight": "^0.0.9",
+    "@tanstack/markdown": "^0.0.12",
     "hono": "^4.12.33"
   },
   "devDependencies": {

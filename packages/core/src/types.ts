@@ -1,3 +1,5 @@
+import type { MarkdownDocument } from "@tanstack/markdown";
+
 export const BRIEF_SCHEMA_VERSION = 1 as const;
 
 export type BriefVisibility = "private" | "public" | "secret";
@@ -17,6 +19,13 @@ export interface HeroBlock extends BaseBlock {
 }
 
 export interface MarkdownBlock extends BaseBlock {
+  type: "markdown";
+  source: string;
+  document: MarkdownDocument;
+  profile?: "streaming";
+}
+
+export interface LegacyMarkdownBlock extends BaseBlock {
   type: "markdown";
   content: string;
 }
@@ -84,6 +93,7 @@ export interface SpacerBlock extends BaseBlock {
 export type BriefBlock =
   | HeroBlock
   | MarkdownBlock
+  | LegacyMarkdownBlock
   | ChecklistBlock
   | CodeBlock
   | LogsBlock

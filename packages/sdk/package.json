@@ -45,6 +45,9 @@
     "prepublishOnly": "vp run build",
     "test": "vp test"
   },
+  "dependencies": {
+    "@tanstack/markdown": "^0.0.12"
+  },
   "devDependencies": {
     "@brief/core": "workspace:*",
     "typescript": "^6.0.2",

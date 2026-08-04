@@ -1,40 +1,9 @@
 /** @jsxImportSource hono/jsx */
 import type { BriefBlock, BriefDocument, BriefPage, BriefSection, Primitive } from "@brief/core";
-import hljs from "highlight.js/lib/core";
-import bash from "highlight.js/lib/languages/bash";
-import javascript from "highlight.js/lib/languages/javascript";
-import json from "highlight.js/lib/languages/json";
-import markdown from "highlight.js/lib/languages/markdown";
-import plaintext from "highlight.js/lib/languages/plaintext";
-import sql from "highlight.js/lib/languages/sql";
-import typescript from "highlight.js/lib/languages/typescript";
-import yaml from "highlight.js/lib/languages/yaml";
 import { html, raw } from "hono/html";
 import { markdownToHtml } from "./markdown";
+import { highlighter } from "./highlight";
 import readerStyles from "./reader.css?inline";
-
-hljs.registerLanguage("bash", bash);
-hljs.registerLanguage("javascript", javascript);
-hljs.registerLanguage("json", json);
-hljs.registerLanguage("markdown", markdown);
-hljs.registerLanguage("plaintext", plaintext);
-hljs.registerLanguage("sql", sql);
-hljs.registerLanguage("typescript", typescript);
-hljs.registerLanguage("yaml", yaml);
-
-const languageAliases: Readonly<Record<string, string>> = {
-  cjs: "javascript",
-  js: "javascript",
-  jsx: "javascript",
-  md: "markdown",
-  mjs: "javascript",
-  sh: "bash",
-  shell: "bash",
-  text: "plaintext",
-  ts: "typescript",
-  tsx: "typescript",
-  yml: "yaml",
-};
 
 const activePageScript = `
 (() => {
@@ -88,13 +57,6 @@ function display(value: Primitive): string {
   return String(value);
 }
 
-function highlightCode(code: string, language?: string): string {
-  const requested = language?.trim().toLowerCase() || "plaintext";
-  const normalized = languageAliases[requested] ?? requested;
-  if (!hljs.getLanguage(normalized)) return code;
-  return hljs.highlight(code, { language: normalized, ignoreIllegals: true }).value;
-}
-
 function Block({ block }: { block: BriefBlock }) {
   switch (block.type) {
     case "hero":
@@ -108,7 +70,7 @@ function Block({ block }: { block: BriefBlock }) {
     case "markdown":
       return (
         <div class="prose" id={block.id}>
-          {raw(markdownToHtml(block.content))}
+          {raw(markdownToHtml(block))}
         </div>
       );
     case "checklist":
@@ -128,16 +90,26 @@ function Block({ block }: { block: BriefBlock }) {
     case "logs": {
       const content = block.type === "code" ? block.code : block.content;
       const label = block.type === "code" ? (block.filename ?? block.language ?? "Code") : "Logs";
-      const highlighted = block.type === "code" ? highlightCode(content, block.language) : content;
+      const highlighted =
+        block.type === "code"
+          ? highlighter.renderCodeBlockData({
+              code: content,
+              ...(block.language ? { lang: block.language } : {}),
+            }).htmlMarkup
+          : undefined;
       return (
         <figure class="code" id={block.id}>
           <figcaption>
             <span>{label}</span>
             <span class="code-kind">{block.type}</span>
           </figcaption>
-          <pre>
-            <code class="hljs">{block.type === "code" ? raw(highlighted) : highlighted}</code>
-          </pre>
+          {highlighted ? (
+            raw(highlighted)
+          ) : (
+            <pre>
+              <code>{content}</code>
+            </pre>
+          )}
         </figure>
       );
     }
@@ -242,6 +214,10 @@ function Sidebar({ pages }: { pages: BriefPage[] }) {
   );
 }
 
+function hasContent(page: BriefPage): boolean {
+  return page.sections.some((section) => section.title || section.blocks.length > 0);
+}
+
 function Footer({ document }: { document: BriefDocument }) {
   const updated = new Date(document.updatedAt).toLocaleDateString("en-US", {
     month: "short",
@@ -265,6 +241,8 @@ function Footer({ document }: { document: BriefDocument }) {
 }
 
 function Reader({ document }: { document: BriefDocument }) {
+  const visiblePages = document.pages.filter(hasContent);
+  const pages = visiblePages.length > 0 ? visiblePages : document.pages.slice(0, 1);
   return (
     <html lang="en">
       <head>
@@ -280,15 +258,15 @@ function Reader({ document }: { document: BriefDocument }) {
       </head>
       <body>
         <div class="shell">
-          <Sidebar pages={document.pages} />
+          <Sidebar pages={pages} />
           <main class="content">
-            {document.pages.map((page, index) => (
+            {pages.map((page, index) => (
               <Page page={page} index={index} />
             ))}
             <Footer document={document} />
           </main>
         </div>
-        {document.pages.length > 1 ? <script>{raw(activePageScript)}</script> : null}
+        {pages.length > 1 ? <script>{raw(activePageScript)}</script> : null}
       </body>
     </html>
   );

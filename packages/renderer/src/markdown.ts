@@ -1,78 +1,65 @@
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+import type { BlockNode, InlineNode, MarkdownDocument } from "@tanstack/markdown";
+import { streamingMarkdownExtension } from "@tanstack/markdown/extensions/streaming";
+import { renderHtml } from "@tanstack/markdown/html";
+import { parseMarkdown } from "@tanstack/markdown/parser";
+import type { LegacyMarkdownBlock, MarkdownBlock } from "@brief/core";
+import { highlightMarkdownCode } from "./highlight";
+
+type AnyMarkdownBlock = MarkdownBlock | LegacyMarkdownBlock;
+
+export function markdownSource(block: AnyMarkdownBlock): string {
+  return "source" in block ? block.source : block.content;
 }
 
-function inline(value: string): string {
-  return escapeHtml(value)
-    .replace(/`([^`]+)`/g, "<code>$1</code>")
-    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
-    .replace(/\*([^*]+)\*/g, "<em>$1</em>")
-    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" rel="noreferrer">$1</a>');
+export function markdownDocument(block: AnyMarkdownBlock): MarkdownDocument {
+  if ("document" in block) return block.document;
+  return parseMarkdown(block.content, { headingIds: true });
 }
 
-export function markdownToHtml(markdown: string): string {
-  const lines = markdown.replaceAll("\r\n", "\n").split("\n");
-  const output: string[] = [];
-  let list: "ol" | "ul" | undefined;
-  let paragraph: string[] = [];
+export function markdownToHtml(block: AnyMarkdownBlock): string {
+  return renderHtml(markdownDocument(block), { highlighter: highlightMarkdownCode });
+}
 
-  const closeList = () => {
-    if (list) output.push(`</${list}>`);
-    list = undefined;
-  };
-  const closeParagraph = () => {
-    if (paragraph.length > 0) output.push(`<p>${inline(paragraph.join(" "))}</p>`);
-    paragraph = [];
-  };
+function inlineText(node: InlineNode): string {
+  if ("value" in node) return node.value;
+  if (node.type === "image") return node.alt;
+  if (node.type === "break") return "\n";
+  if ("children" in node) return node.children.map(inlineText).join("");
+  return "";
+}
 
-  for (const line of lines) {
-    const heading = /^(#{1,4})\s+(.+)$/.exec(line);
-    const unordered = /^[-*]\s+(.+)$/.exec(line);
-    const ordered = /^\d+\.\s+(.+)$/.exec(line);
-    const quote = /^>\s?(.+)$/.exec(line);
-    if (heading) {
-      closeParagraph();
-      closeList();
-      output.push(`<h${heading[1]?.length}>${inline(heading[2] ?? "")}</h${heading[1]?.length}>`);
-    } else if (unordered || ordered) {
-      closeParagraph();
-      const nextList = unordered ? "ul" : "ol";
-      if (list !== nextList) {
-        closeList();
-        list = nextList;
-        output.push(`<${list}>`);
-      }
-      output.push(`<li>${inline((unordered?.[1] ?? ordered?.[1]) || "")}</li>`);
-    } else if (quote) {
-      closeParagraph();
-      closeList();
-      output.push(`<blockquote>${inline(quote[1] ?? "")}</blockquote>`);
-    } else if (line.trim() === "") {
-      closeParagraph();
-      closeList();
-    } else {
-      paragraph.push(line.trim());
-    }
+function blockText(node: BlockNode): string {
+  if (node.type === "code" || node.type === "html") return node.value;
+  if (node.type === "thematicBreak") return "────────";
+  if (node.type === "table") {
+    return [node.header, ...node.rows]
+      .map((row) => row.map((cell) => cell.children.map(inlineText).join("")).join("\t"))
+      .join("\n");
   }
-  closeParagraph();
-  closeList();
-  return output.join("\n");
+  if (node.type === "footnotes") {
+    return node.items.flatMap((item) => item.children.map(blockText)).join("\n");
+  }
+  if (node.type === "list") {
+    return node.items.map((item) => item.children.map(blockText).join("\n")).join("\n");
+  }
+  if ("children" in node) {
+    return node.children
+      .map((child) =>
+        "type" in child && child.type === "paragraph"
+          ? blockText(child)
+          : "children" in child || "value" in child
+            ? inlineText(child as InlineNode)
+            : blockText(child as BlockNode),
+      )
+      .join("");
+  }
+  return "";
 }
 
-export function markdownToText(markdown: string): string {
-  return markdown
-    .replace(/```[\s\S]*?```/g, (match) => match.replace(/^```[^\n]*\n?|```$/g, ""))
-    .replace(/^#{1,6}\s+/gm, "")
-    .replace(/^[-*]\s+/gm, "• ")
-    .replace(/^>\s?/gm, "")
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-    .replace(/[*_`]/g, "")
-    .trim();
+export function markdownToText(block: AnyMarkdownBlock): string {
+  return markdownDocument(block).children.map(blockText).filter(Boolean).join("\n\n").trim();
 }
 
-export { escapeHtml };
+export function parseStreamingMarkdown(source: string): MarkdownDocument {
+  return parseMarkdown(source, { extensions: [streamingMarkdownExtension()], headingIds: true });
+}

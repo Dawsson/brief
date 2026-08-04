@@ -95,7 +95,7 @@ function applyOperation(document: BriefDocument, operation: BriefOperation): voi
     if (typeof operation.value !== "string") {
       throw new OperationError("Block appends must target a section");
     }
-    if (location.block.type !== "logs" && location.block.type !== "markdown") {
+    if (location.block.type !== "logs") {
       throw new OperationError(`Cannot append to ${location.block.type}`);
     }
     location.block.content += operation.value;

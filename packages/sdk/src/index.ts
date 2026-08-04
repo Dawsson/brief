@@ -5,6 +5,7 @@ export type {
   CodeOptions,
   CreateBriefOptions,
   ImageOptions,
+  MarkdownOptions,
   MetricOptions,
 } from "./client";
 export type { BriefDocument, BriefOperation, BriefVisibility } from "@brief/core";
